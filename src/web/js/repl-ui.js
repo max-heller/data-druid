@@ -175,9 +175,10 @@
                     console.log("Time to run compiled program:", JSON.stringify(runResult.stats));
                     if(rr.isSuccessResult(runResult)) {
                       return rr.safeCall(function() {
-                        return checkUI.drawCheckResults(output, CPO.documents, rr,
-                                                        runtime.getField(runResult.result, "checks"), v);
-                      }, function(_) {
+                          let hook = rr.getField(rr.modules["definitions://"], "defined-values")["repl-hook"];
+                          let answer = rr.getField(runResult.result, "answer");
+                          return hook.app(answer);
+                      }, function(hookresult) {
                         outputPending.remove();
                         outputPendingHidden = true;
                         //updateItems(isMain);
