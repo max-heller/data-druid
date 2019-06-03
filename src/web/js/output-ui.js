@@ -11,20 +11,23 @@
     { "import-type": "builtin",
       name: "image-lib" },
     { "import-type": "builtin",
+      name: "tree" },
+    { "import-type": "builtin",
       name: "load-lib" }
   ],
   provides: {},
   nativeRequires: [
     "pyret-base/js/runtime-util",
-    "pyret-base/js/js-numbers"
+    "pyret-base/js/js-numbers",
   ],
-  theModule: function(runtime, _, uri, parsePyret, errordisplayLib, srclocLib, astLib, image, loadLib, util, jsnums) {
+  theModule: function(runtime, _, uri, parsePyret, errordisplayLib, srclocLib, astLib, image, tree, loadLib, util, jsnums) {
 
     var srcloc = runtime.getField(srclocLib, "values");
     var isSrcloc = runtime.getField(srcloc, "is-Srcloc");
     var AST = runtime.getField(astLib, "values");
     var ED = runtime.getField(errordisplayLib, "values");
     var PP = runtime.getField(parsePyret, "values");
+    var TREE = runtime.getField(tree, "values");
 
     // TODO(joe Aug 18 2014) versioning on shared modules?  Use this file's
     // version or something else?
@@ -1214,6 +1217,20 @@
       renderers["cyclic"] = function renderCyclic(val) {
         return renderText(sooper(renderers, "cyclic", val));
       };
+      
+      renderers["tree"] = function renderCyclic(val, pushTodo) {
+        console.log("TREE", val);
+        var vals = [];
+        if (val.$constructor.$fieldNames) {
+          for (var i = 0; i < val.$constructor.$fieldNames.length; i++) {
+            vals[i] = val.dict[val.$constructor.$fieldNames[i]];
+          }
+        }
+        pushTodo(undefined, val, undefined, vals, "render-tree",
+                 { arity: val.$arity, implicitRefs: val.$mut_fields_mask,
+                   fields: val.$constructor.$fieldNames, constructorName: val.$name,
+                   curr: val });
+      };
       renderers["render-color"] = function renderColor(top) {
         var val = top.extra;
         var container = $("<span>").addClass("replToggle replOutput replCycle");
@@ -1563,6 +1580,8 @@
       renderers["data"] = function(val, pushTodo) {
         if (image.isColor(val)) {
           pushTodo(undefined, undefined, undefined, [], "render-color", val);
+        } else if (runtime.unwrap(runtime.getField(TREE, "is-Tree").app(val))) {
+          renderers["tree"](val, pushTodo);
         } else {
           return renderers.__proto__["data"](val, pushTodo);
         }
@@ -1588,6 +1607,103 @@
         }
         container.click(toggleExpanded);
         return container;
+      };
+      renderers["render-tree"] = function renderData(top) {
+
+        if (runtime.unwrap(runtime.getField(TREE, "is-mt").app(top.extra.curr)))
+        {
+          // FIX: Style this appropriately
+          return $("<span>").text("mt");
+        }
+
+        let nodeID = 0;
+        let graph = new dagreD3.graphlib.Graph();
+        graph.setGraph({});
+        graph.setDefaultEdgeLabel(function() { return {}; });
+
+        let invisible = {shape: 'circle', label: "", style: "stroke:none; fill:none; opacity: 0;"}
+        
+        function render(tree, parentNode) {
+          let id = nodeID++;
+          return runtime.ffi.cases(runtime.getField(TREE, "is-Tree"), "Tree", tree, {
+            "mt": function(_) {
+                graph.setNode(-id, invisible);
+                return -id;
+            },
+            "tree": function(value, left, right) {
+              graph.setNode(id, {pyret: tree, shape: 'circle', label: value.toString()});
+
+              if (!(runtime.unwrap(runtime.getField(TREE, "is-mt").app(left))
+                 && runtime.unwrap(runtime.getField(TREE, "is-mt").app(right))))
+              {
+                let leftID = render(left, id);
+                graph.setEdge(id, leftID,
+                  leftID < 0 ? invisible : {'curve': d3.curveBasis});
+
+                let rightID = render(right, id);
+                graph.setEdge(id, rightID,
+                  rightID < 0 ? invisible : {'curve': d3.curveBasis});
+              }
+              return id;
+            }
+          });
+        }
+
+        render(top.extra.curr);
+
+        let canvas = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        let group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        canvas.appendChild(group);
+
+        // FIX: this causes a momentary flash of visibility
+        // but without it things are sized incorrectly.
+        // I have no idea why. :( 
+        document.getElementById("offscreen").appendChild(canvas);
+
+        new dagreD3.render()(d3.select(group),graph);
+
+        //d3.select(canvas).attr('height', graph.graph().height);
+        //d3.select(canvas).attr('width', graph.graph().width);
+
+        function copyToClipboard(str) {
+          const el = document.createElement('textarea');
+          el.value = str;
+          document.body.appendChild(el);
+          el.select();
+          document.execCommand('copy');
+          document.body.removeChild(el);
+          flashMessage("Copied tree to clipboard.");
+        };
+
+        function copyPyretValueToClipboard(value) {
+          runtime.runThunk(function() {
+            // re-render the value
+            return runtime.toReprJS(value, runtime.ReprMethods._tostring);
+          }, function(result) {
+            if(runtime.isSuccessResult(result)) {
+              copyToClipboard(result.result);
+            }
+            else {
+            }
+          });
+        }
+
+        d3.select(canvas).selectAll("g.node").on("click",
+          function(id) {
+            var node = graph.node(id);
+            copyPyretValueToClipboard(node.pyret);
+            d3.event.stopPropagation();
+          });
+
+        canvas.addEventListener("click", function(e) {
+          copyPyretValueToClipboard(top.extra.curr);
+          e.stopPropagation();
+        });
+
+        
+
+
+        return canvas;
       };
       function toggleExpanded(e) {
         $(this).toggleClass("expanded");

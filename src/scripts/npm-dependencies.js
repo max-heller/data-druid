@@ -25,6 +25,9 @@ define("js-md5", [], function () { return jsmd5; });
 colorspaces = require("colorspaces");
 define("colorspaces", [], function () { return colorspaces; });
 
+dagreD3 = require("dagre-d3");
+define("dagre-d3", [], function () { return dagreD3; });
+
 d3 = require("d3");
 define("d3", [], function() { return d3; });
 

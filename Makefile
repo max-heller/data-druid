@@ -109,6 +109,9 @@ build/web/js/es6-shim.js: node_modules/es6-shim/es6-shim.min.js
 build/web/js/seedrandom.js: node_modules/seedrandom/seedrandom.js
 	cp $< $@
 
+build/web/js/dagre-d3.js: node_modules/dagre-d3/dist/dagre-d3.js
+	cp $< $@
+
 build/web/js/source-map.js: node_modules/source-map/dist/source-map.js
 	cp $< $@
 
@@ -163,6 +166,7 @@ MISC_JS = build/web/js/q.js build/web/js/url.js build/web/js/require.js \
           build/web/js/foldcode.js \
           build/web/js/foldgutter.js \
           build/web/js/colorspaces.js \
+          build/web/js/dagre-d3.js \
           build/web/js/es6-shim.js \
           build/web/js/runmode.js \
 					build/web/js/mousetrap.min.js \
