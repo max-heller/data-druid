@@ -92,7 +92,7 @@
       var rr = resultRuntime;
 
       // MUST BE CALLED ON THE PYRET STACK
-      function renderAndDisplayError(runtime, error, stack, click, result) {
+      function renderAndDisplayError(runtime, error, stack, click, result, className) {
         //console.log('renderAndDisplayError');
         //updateItems(isMain);
         var error_to_html = errorUI.error_to_html;
@@ -108,7 +108,7 @@
                 html.addClass("highlights-active");
               });
               html[0].setAttribute('aria-hidden', 'true');
-              html.addClass('compile-error').appendTo(output);
+              html.addClass(className || "compile-error").appendTo(output);
               //updateItems?
               if (click) html.click();
             }).done(function () {
@@ -132,7 +132,7 @@
             // Parse Errors
             // `renderAndDisplayError` must be called on the pyret stack
             // this application runs in the context of the above `callingRuntime.runThunk`
-            return renderAndDisplayError(callingRuntime, result.exn.exn, undefined, true, result);
+            return renderAndDisplayError(callingRuntime, result.exn.exn, undefined, true, result, "compile-error");
           }
           else if(callingRuntime.isSuccessResult(result)) {
             result = result.result;
@@ -157,7 +157,7 @@
                     return callingRuntime.eachLoop(runtime.makeFunction(function(i) {
                       // `renderAndDisplayError` must be called in the context of the
                       // pyret stack.
-                      return renderAndDisplayError(callingRuntime, errors[i], [], true, result);
+                      return renderAndDisplayError(callingRuntime, errors[i], [], true, result, "compile-error");
                     }), 0, errors.length);
                   }, function (result) {
                     //updateItems(isMain);
@@ -178,11 +178,9 @@
                           let hook = rr.getField(rr.modules["definitions://"], "defined-values")["repl-hook"];
                           let answer = rr.getField(runResult.result, "answer");
                           return hook.app(answer);
-                      }, function(hookresult) {
-                        outputPending.remove();
-                        outputPendingHidden = true;
-                        //updateItems(isMain);
-                        return true;
+                      }, function(prompt) {
+                        return renderAndDisplayError(rr, prompt,
+                          null, true, runResult, "check-block check-block-failed");
                       }, "rr.drawCheckResults");
                     } else {
                       didError = true;
@@ -190,7 +188,7 @@
                       // this application runs in the context of the above `rr.runThunk`.
                       //updateItems?
                       return renderAndDisplayError(resultRuntime, runResult.exn.exn,
-                                                   runResult.exn.pyretStack, true, runResult);
+                                                   runResult.exn.pyretStack, true, runResult, "compile-error");
                     }
                   }, function(_) {
                     restarter.resume(callingRuntime.nothing);
