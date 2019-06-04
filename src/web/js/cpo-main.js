@@ -464,12 +464,6 @@
       // Resizable
       var replHeight = $( "#REPL" ).height();
       var editorEvenSplit = true;
-      $( "#REPL" ).resizable({
-        maxHeight: replHeight,
-        maxWidth: window.innerWidth - 128,
-        minHeight: replHeight,
-        minWidth: 100,
-        handles: {"w": "#handle"}});
 
       $( "#REPL" ).on( "resize", leftResize);
       $( "#REPL" ).on( "resize", function() {editorEvenSplit = false;});
@@ -481,8 +475,8 @@
 
       $( "#REPL" ).on( "resizestop", toPercent);
 
-      var rightResizePct = 50;
-      var leftResizePct = 50;
+      var rightResizePct = 100;
+      var leftResizePct = 0;
 
       function toPercent(event, ui) {
         rightResizePct = (ui.size.width / window.innerWidth) * 100
@@ -495,7 +489,7 @@
       });
       // End Resizable
 
-      function setEditorSize(leftPct, rightPct) {
+      window.setEditorSize = function setEditorSize(leftPct, rightPct) {
         $( "#REPL" ).css( "width", rightPct + "%");
         $( "#REPL" ).css( "left", leftPct + "%");
         $(".replMain").css("width", leftPct + "%");
@@ -508,9 +502,11 @@
         }
         else {
           editorEvenSplit = true;
-          setEditorSize("50", "50");
+          setEditorSize("0", "100");
         }
       }
+
+      setEditorSize("0", "100");
 
       // save
       // On Mac mod ends up mapping to command+s whereas on Windows and Linux it maps to ctrl+s.
