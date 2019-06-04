@@ -199,6 +199,10 @@
                         restarter.resume(callingRuntime.nothing);
                       });
                     } else {
+                      document.querySelectorAll(".CodeMirror")
+                        .forEach(function(cm) {
+                          cm.CodeMirror.refresh();
+                        });
                       restarter.resume(callingRuntime.nothing);
                     }
                   });
