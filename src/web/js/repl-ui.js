@@ -190,8 +190,17 @@
                       return renderAndDisplayError(resultRuntime, runResult.exn.exn,
                                                    runResult.exn.pyretStack, true, runResult, "compile-error");
                     }
-                  }, function(_) {
-                    restarter.resume(callingRuntime.nothing);
+                  }, function(runResult) {
+                    if (rr.isFailureResult(runResult)) {
+                      rr.runThunk(function() {
+                        return renderAndDisplayError(resultRuntime, runResult.exn.exn,
+                                                     runResult.exn.pyretStack, true, runResult, "compile-error");
+                      }, function(_) {
+                        restarter.resume(callingRuntime.nothing);
+                      });
+                    } else {
+                      restarter.resume(callingRuntime.nothing);
+                    }
                   });
                 });
               }
