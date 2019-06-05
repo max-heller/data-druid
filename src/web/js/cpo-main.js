@@ -492,8 +492,6 @@
         }
       }
 
-      setEditorSize("0", "100");
-
       // save
       // On Mac mod ends up mapping to command+s whereas on Windows and Linux it maps to ctrl+s.
       Mousetrap.bindGlobal('mod+s', function(e) {

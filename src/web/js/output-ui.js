@@ -224,12 +224,16 @@
 
     function expandableMore(dom) {
       var container = $("<div>");
-      var moreLink = $("<a>").text("(More...)");
-      var lessLink = $("<a>").text("(Less...)");
+      var moreLink = $("<a href='#'>").text("(Show)");
+      var lessLink = $("<a href='#'>").text("(Hide)");
       function toggle() {
         dom.toggle();
         lessLink.toggle();
         moreLink.toggle();
+        document.querySelectorAll(".CodeMirror")
+          .forEach(function(cm) {
+            cm.CodeMirror.refresh();
+          });
       }
       moreLink.on("click", toggle);
       lessLink.on("click", toggle);
