@@ -464,6 +464,13 @@
       // Resizable
       var replHeight = $( "#REPL" ).height();
       var editorEvenSplit = true;
+      $("#REPL").resizable({
+        maxHeight: replHeight,
+        maxWidth: window.innerWidth - 128,
+        minHeight: replHeight,
+        minWidth: 100,
+        handles: { "w": "#handle" }
+      });
 
       $( "#REPL" ).on( "resize", leftResize);
       $( "#REPL" ).on( "resize", function() {editorEvenSplit = false;});
@@ -493,6 +500,8 @@
         $( "#REPL" ).css( "width", rightPct + "%");
         $( "#REPL" ).css( "left", leftPct + "%");
         $(".replMain").css("width", leftPct + "%");
+        if (leftPct == "0") $("#handle").css("display", "none");
+        else $("#handle").css("display", "block");
       }
 
       function toggleEditorSize() {
