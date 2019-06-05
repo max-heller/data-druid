@@ -229,8 +229,9 @@
             }
           }
           rr.runThunk(function() {
-            let task = rr.getField(rr.modules["definitions://"], "defined-values")["tasks"]["$var"].dict.first;
+            let getCurrentTask = rr.getField(rr.modules["definitions://"], "defined-values")["get-current-task"];
             return rr.safeCall(function(){
+              let task = getCurrentTask.app();
               return renderAndDisplayError(rr, task,
                   null, false, null, "check-block check-block-failed");
               }, function(result) {
