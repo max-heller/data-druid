@@ -179,8 +179,7 @@
                           let answer = rr.getField(runResult.result, "answer");
                           return hook.app(answer);
                       }, function(prompt) {
-                        return renderAndDisplayError(rr, prompt,
-                          null, true, runResult, "check-block check-block-failed");
+                        return prompt;
                       }, "rr.drawCheckResults");
                     } else {
                       didError = true;
@@ -229,10 +228,20 @@
               snippets[i].CodeMirror.refresh();
             }
           }
-          updateItems(isMain);
-          //speakHistory(1);
-          doneDisplay.resolve("Done displaying output");
-          return callingRuntime.nothing;
+          rr.runThunk(function() {
+            let task = rr.getField(rr.modules["definitions://"], "defined-values")["tasks"]["$var"].dict.first;
+            return rr.safeCall(function(){
+              return renderAndDisplayError(rr, task,
+                  null, false, null, "check-block check-block-failed");
+              }, function(result) {
+                  return result;
+              });
+          }, function(_) {
+            updateItems(isMain);
+            //speakHistory(1);
+            doneDisplay.resolve("Done displaying output");
+            return callingRuntime.nothing;
+          });
         });
       return doneDisplay.promise;
       }
