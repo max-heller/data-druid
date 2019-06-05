@@ -341,23 +341,7 @@
 
       // CPO.editor is set in beforePyret.js
       var editor = CPO.editor;
-      var currentAction = "run";
 
-      $("#select-run").click(function() {
-        runButton.text("Run");
-        currentAction = "run";
-        doRunAction(editor.cm.getValue());
-        $('#runDropdown').attr('aria-expanded', 'false');
-        $("#run-dropdown-content").attr('aria-hidden', 'true').hide();
-      });
-
-      $("#select-tc-run").click(function() {
-        runButton.text("Type-check and Run");
-        currentAction = "tc-and-run";
-        doRunAction(editor.cm.getValue());
-        $('#runDropdown').attr('aria-expanded', 'false');
-        $("#run-dropdown-content").attr('aria-hidden', 'true').hide();
-      });
       /*
       $("#select-scsh").click(function() {
         highlightMode = "scsh"; $("#run-dropdown-content").hide();});
@@ -381,14 +365,7 @@
         for(var i=0; i< sheet.cssRules.length; i++) {
           sheet.deleteRule(i);
         }
-        switch (currentAction) {
-          case "run":
-            replWidget.runCode(src, {check: true, cm: editor.cm});
-            break;
-          case "tc-and-run":
-            replWidget.runCode(src, {check: true, cm: editor.cm, "type-check": true});
-            break;
-        }
+        replWidget.runCode(src, {check: true, cm: editor.cm});
       }
 
       runButton.on("click", function() { doRunAction(editor.cm.getValue()); });
