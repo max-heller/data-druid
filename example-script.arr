@@ -3,10 +3,17 @@ import srcloc as S
 import valueskeleton as VS
 
 data Task:
-  | task(prompt, predicate)
+  | task(prompt :: ED.ErrorDisplay, predicate :: (Any -> Boolean))
+  | annotated(feedback :: ED.ErrorDisplay, task :: Task%(is-task))
 sharing:
   method render-fancy-reason(self):
-    self.prompt
+    cases(Task) self:
+      | task(prompt, _) => prompt
+      | annotated(feedback, t) =>
+        ED.h-sequence(link(
+            feedback,
+            t.prompt.contents), " ")
+    end
   end
 end
 
@@ -36,8 +43,8 @@ var tasks =
   [list:
     task([ED.error:
         [ED.para:
-          ED.text("Here's the data definition:")],
-        ED.cmcode(S.srcloc("definitions://", 22, 0, 0, 28, 3, 0)),
+          ED.text("Welcome to the Data Druid demo! Here's a data definition for a binary tree:")],
+        ED.cmcode(S.srcloc("definitions://", 29, 0, 0, 35, 3, 0)),
         [ED.para:
           ED.text("Ready to begin? Enter yes or no.")]], is-yes),
     task([ED.error: [ED.para: ED.text("First, construct an empty tree.")]],
@@ -48,25 +55,29 @@ var tasks =
       _ == node(1, node(2, mt, mt), node(3, mt, mt))),
     task([ED.error: [ED.para: ED.text("Is it possible to construct a tree with this definition with 5 as its root and 1, 2, and 3 as its direct children? Enter yes or no.")]],
       is-no),
-    task([ED.error: ED.text("Congrats, you're done!")],
+    task([ED.error: [ED.para: ED.text("Congrats, you're done!")]],
       lam(_): false end)
   ]
 
 fun repl-hook(value) -> Task:
   cases(List) tasks:
     | link(t, rest) =>
-      if (value <> nothing) and t.predicate(value) block:
+      base = cases(Task) t:
+        | task(_, _) => t
+        | annotated(_, base) => base
+      end
+      if (value <> nothing) and base.predicate(value) block:
         tasks := rest
-        repl-hook(nothing)
-      else:
-        if (value <> nothing):
-          task(ED.h-sequence(
-              link(
-                [ED.para: ED.text("Incorrect, try again:")],
-                t.prompt.contents), " "), t.predicate)
-        else:
-          t
+        tasks := cases(List) tasks:
+          | link(next, rr) =>
+            link(annotated([ED.para: ED.text("Good job!")], next), rr)
+          | empty => tasks
         end
+        tasks.first
+      else if (value <> nothing):
+        annotated([ED.para: ED.text("Incorrect, try again:")], base)
+      else:
+        base
       end
     | empty =>
       task([ED.error: ED.text("Seriously, you're done.")], lam(_): false end)
