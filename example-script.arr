@@ -45,6 +45,20 @@ sharing:
   end
 end
 
+data Attempt:
+  | correct
+  | neutral
+  | incorrect
+end
+
+fun feedback(attempt :: Attempt) -> ED.ErrorDisplay:
+  cases(Attempt) attempt:
+    | correct => [ED.para: ED.text("Good job!")]
+    | neutral => [ED.para: ]
+    | incorrect => [ED.para: ED.text("Incorrect, try again:")]
+  end
+end
+
 var tasks =
   [list:
     task([ED.error:
@@ -65,24 +79,24 @@ var tasks =
       lam(_): false end)
   ]
 
-var feedback = ""
+var attempt :: Attempt = neutral
 
 fun get-current-task() -> Annotated block:
-  current-feedback = feedback
-  feedback := "Incorrect, try again:"
-  annotated-task([ED.para: ED.text(current-feedback)],
+  current-attempt = attempt
+  attempt := incorrect
+  annotated-task(feedback(current-attempt),
     task(tasks.first.prompt, tasks.first.predicate))
 end
 
 fun repl-hook(value):
   cases(List) tasks:
     | link(t, rest) =>
-      feedback := ask block:
-        | value == nothing then: ""
+      attempt := ask block:
+        | value == nothing then: neutral
         | t.predicate(value) then:
           tasks := rest
-          "Good job!"
-        | otherwise: "Incorrect, try again:"
+          correct
+        | otherwise: incorrect
       end
     | empty => raise("Found end of task list. Should not have occured.")
   end

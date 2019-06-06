@@ -230,10 +230,11 @@
           }
           rr.runThunk(function() {
             let getCurrentTask = rr.getField(rr.modules["definitions://"], "defined-values")["get-current-task"];
+            let attemptResult = rr.getField(rr.modules["definitions://"], "defined-values")["attempt"].$var.$name;
             return rr.safeCall(function(){
               let task = getCurrentTask.app();
               return renderAndDisplayError(rr, task,
-                  null, false, null, "check-block check-block-failed");
+                  null, false, null, "check-block check-block-failed attempt attempt-" + attemptResult);
               }, function(result) {
                   return result;
               });
