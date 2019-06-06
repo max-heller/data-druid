@@ -398,12 +398,12 @@ div.spy-block > table > th { display: none; }
   background: #c5e1a5;
 }
 
-.attempt-incorrect p:first-child {
+.attempt-incorrect p:first-child, .attempt-pyret-error p:first-child {
   background: #FFECB3;
 }
 
 .attempt p + p {
-  background: #cccccc;
+  background: #adc9ef;
   padding-top: 5px;
   padding-bottom: 5px;
 }

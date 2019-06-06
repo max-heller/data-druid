@@ -49,6 +49,7 @@ data Attempt:
   | correct
   | neutral
   | incorrect
+  | pyret-error
 end
 
 fun feedback(attempt :: Attempt) -> ED.ErrorDisplay:
@@ -56,6 +57,7 @@ fun feedback(attempt :: Attempt) -> ED.ErrorDisplay:
     | correct => [ED.para: ED.text("Good job!")]
     | neutral => [ED.para: ]
     | incorrect => [ED.para: ED.text("Incorrect, try again:")]
+    | pyret-error => [ED.para: ED.text("Encountered Pyret error(s), try again:")]
   end
 end
 
@@ -83,7 +85,7 @@ var attempt :: Attempt = neutral
 
 fun get-current-task() -> Annotated block:
   current-attempt = attempt
-  attempt := incorrect
+  attempt := pyret-error
   annotated-task(feedback(current-attempt),
     task(tasks.first.prompt, tasks.first.predicate))
 end
