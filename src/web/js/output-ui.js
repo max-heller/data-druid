@@ -224,8 +224,8 @@
 
     function expandableMore(dom) {
       var container = $("<div>");
-      var moreLink = $("<a href='#'>").text("(Show)");
-      var lessLink = $("<a href='#'>").text("(Hide)");
+      var moreLink = $("<a href='#'>").text("(Show Definition)");
+      var lessLink = $("<a href='#'>").text("(Hide Definition)");
       function toggle() {
         dom.toggle();
         lessLink.toggle();

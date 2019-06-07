@@ -242,6 +242,10 @@
               return renderAndDisplayError(rr, task,
                   null, false, null, "check-block check-block-failed attempt attempt-" + attemptResult);
               }, function(result) {
+                  document.querySelectorAll(".CodeMirror")
+                    .forEach(function(cm) {
+                      cm.CodeMirror.refresh();
+                    });
                   return result;
               });
           }, function(_) {
