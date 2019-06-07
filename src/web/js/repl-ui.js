@@ -32,13 +32,13 @@
                       textHandlers, worldLib, loadLib,
                       util) {
     var ffi = runtime.ffi;
-    
+
     var output = jQuery("<div id='output' aria-hidden='true' class='cm-s-default'>");
     var outputPending = jQuery("<span>").text("Gathering results...");
     var outputPendingHidden = true;
     var canShowRunningIndicator = false;
     var running = false;
-    
+
     // for data-druid logging
     var rawInput = "";
 
@@ -232,25 +232,13 @@
             }
           }
           // DATA DRUID - PROMPT PRINTING
+          let task;
+          let attemptResult;
           rr.runThunk(function() {
             let getCurrentTask = rr.getField(rr.modules["definitions://"], "defined-values")["get-current-task"];
-            let attemptResult = rr.getField(rr.modules["definitions://"], "defined-values")["attempt"].$var.$name;
-            // logging:
-            fetch("https://us-central1-aqueous-walker-242917.cloudfunctions.net/data-druid-logger", {
-              method : 'PUT',
-              body: JSON.stringify({
-                student_email: "ex@ample.com",
-                assignment_id: 3,
-                task_id: 1,
-                raw_input: rawInput,
-                result: attemptResult
-              }),
-              headers: {
-                'Content-Type': 'application/json'
-              }
-            }).then(function(error) {console.log(error)});
+            attemptResult = rr.getField(rr.modules["definitions://"], "defined-values")["attempt"].$var.$name;
             return rr.safeCall(function(){
-              let task = getCurrentTask.app();
+              task = getCurrentTask.app();
               return renderAndDisplayError(rr, task,
                   null, false, null, "check-block check-block-failed attempt attempt-" + attemptResult);
               }, function(result) {
@@ -262,6 +250,26 @@
             doneDisplay.resolve("Done displaying output");
             return callingRuntime.nothing;
           });
+          // logging:
+          if (rawInput != "") {
+            let task_id = rr.getField(rr.getField(task, "t"), "id");
+            // If answer was correct, task list will have advanced by this point,
+            // so we need to look for the "previous" task id
+            if (attemptResult === "correct") task_id--;
+            fetch("https://us-central1-aqueous-walker-242917.cloudfunctions.net/data-druid-logger", {
+              method: 'PUT',
+              body: JSON.stringify({
+                student_email: "ex@ample.com",
+                assignment_id: 3,
+                task_id: task_id,
+                raw_input: rawInput,
+                result: attemptResult
+              }),
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            }).then(function (error) { console.log(error) });
+          }
         });
       return doneDisplay.promise;
       }

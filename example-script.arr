@@ -18,10 +18,20 @@ end
 
 #################################
 
-data Task:
-  | task(
-      prompt :: ED.ErrorDisplay,
-      predicate :: (Any -> Boolean))
+newtype Task as TaskT
+is-Task = TaskT.test
+
+task :: (ED.ErrorDisplay, (Any -> Boolean) -> Task) = block:
+  var next-task-id = 1
+  lam(prompt, predicate) block:
+    task-id = next-task-id
+    next-task-id := next-task-id + 1
+    TaskT.brand({
+        id: task-id,
+        prompt: prompt,
+        predicate: predicate
+      })
+  end
 end
 
 data Annotated:
