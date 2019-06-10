@@ -260,7 +260,7 @@
             // If answer was correct, task list will have advanced by this point,
             // so we need to look for the "previous" task id
             if (attemptResult === "correct") task_id--;
-            fetch("https://us-central1-aqueous-walker-242917.cloudfunctions.net/data-druid-logger", {
+            fetch("https://us-central1-data-druid-brown.cloudfunctions.net/logger", {
               method: 'PUT',
               body: JSON.stringify({
                 student_email: "ex@ample.com",
