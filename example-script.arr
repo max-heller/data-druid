@@ -1,8 +1,8 @@
 import error-display as ED
 import srcloc as S
 import valueskeleton as VS
+include image
 
-## MOVE?
 
 ## CHOICE (FOR STUDENT RESPONSES)
 
@@ -33,7 +33,7 @@ fun leaf(val):
   node(val, mt, mt)
 end
 
-# separate lines using '\n'
+# Prompts can be strings, with lines separated by '\n', or lists of anything
 task-list :: List<{String; (Any -> Boolean)}> = [list:
   {"First, construct an empty tree."; _ == mt},
   {"Next, construct a tree made of a single node with value 5.";
@@ -111,39 +111,62 @@ fun feedback(attempt :: Attempt) -> ED.ErrorDisplay:
   end
 end
 
-instructor-defn = 
+instructor-defn =
   ED.cmcode(S.srcloc("definitions://", defn-start, defn-char-start, 0, defn-end, defn-char-end, 0))
 
-fun get-task-list(items :: List<{String; (Any -> Boolean)}>) -> List<Task>:
+fun get-task-list(items :: List<{Any; (Any -> Boolean)}>) -> List<Task>:
   doc: "Takes instructor list and converts to a list of Task objects"
-  body-tail = items.foldr(
-    lam(item, acc-tasks): 
-      link(
-        task(
-          ED.h-sequence(
-            string-split-all(item.{0}, "\n").foldr(
-              lam(elt, acc): link([ED.para: ED.text(elt)], acc) end, 
-              [list: [ED.para: ED.optional(instructor-defn)]]),
-            " "),
-          item.{1}),
-        acc-tasks)
-    end, 
-    [list: task([ED.error: [ED.para: ED.text(closing-prompt)]], {(_): false})])
-  head = task(
+
+  fun to-ED(contents :: Any) -> List<ED.ErrorDisplay>:
+    doc: "Converts anything into a list of renderable ErrorDisplays"
+
+    fun to-ED-unwrapped(elt :: Any) -> List<ED.ErrorDisplay>:
+      doc: "Converts anything into a list of ErrorDisplays"
+      ask:
+        | is-List(elt) then:
+          elt.foldr({(content, acc): to-ED-unwrapped(content) + acc}, empty)
+        | is-string(elt) then:
+          lines = string-split-all(elt, "\n")
+          lines.map(ED.text)
+        | otherwise: [list: ED.embed(elt)]
+      end
+    end
+
+    to-ED-unwrapped(contents).map({(x): [ED.para: x]})
+  where:
+    to-ED("test") is [list: [ED.para: ED.text("test")]]
+    to-ED([list: "a", circle(10, "solid", "green"), "b"]) is [list:
+      [ED.para: ED.text("a")],
+      [ED.para: ED.embed(circle(10, "solid", "green"))],
+      [ED.para: ED.text("b")]]
+    to-ED([list: [list: "a", "b"]]) is [list:
+      [ED.para: ED.text("a")],
+      [ED.para: ED.text("b")]]
+  end
+
+  # First prompt includes non-optional data definition
+  first = task(
     ED.h-sequence(
-      string-split-all(opening-prompt, "\n").foldr(
-        lam(elt, acc): link([ED.para: ED.text(elt)], acc) end, 
-        [list: 
-          [ED.para: instructor-defn], 
-          [ED.para: ED.text("Ready to begin? Enter yes or no.")]]),
+      to-ED(opening-prompt) + [list:
+        [ED.para: instructor-defn],
+        [ED.para: ED.text("Ready to begin? Enter yes or no.")]],
       " "),
     is-yes)
-  link(head, body-tail)
+
+  # All prompts after the first
+  rest = items.foldr(
+    lam(item, acc-tasks):
+      prompt = ED.h-sequence(
+        to-ED(item.{0}) + [list: [ED.para: ED.optional(instructor-defn)]],
+        " ")
+      link(task(prompt, item.{1}), acc-tasks)
+    end,
+    [list: task(ED.h-sequence(to-ED(closing-prompt), " "), {(_): false})])
+
+  link(first, rest)
 end
 
 var tasks = get-task-list(task-list)
-  
-
 
 var attempt :: Attempt = neutral
 
