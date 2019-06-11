@@ -1,7 +1,7 @@
 import error-display as ED
 import srcloc as S
 import valueskeleton as VS
-include image
+import image
 
 
 ## CHOICE (FOR STUDENT RESPONSES)
@@ -106,8 +106,8 @@ fun feedback(attempt :: Attempt) -> ED.ErrorDisplay:
   cases(Attempt) attempt:
     | correct => [ED.para: ED.text("Good job!")]
     | neutral => [ED.para: ]
-    | incorrect => [ED.para: ED.text("Incorrect, try again:")]
-    | pyret-error => [ED.para: ED.text("Encountered Pyret error(s), try again:")]
+    | incorrect => [ED.para: ED.text("Incorrect, try again.")]
+    | pyret-error => [ED.para: ED.text("Encountered Pyret error(s), try again.")]
   end
 end
 

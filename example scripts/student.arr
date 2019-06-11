@@ -1,7 +1,7 @@
 import error-display as ED
 import srcloc as S
 import valueskeleton as VS
-include image
+
 
 
 ## CHOICE (FOR STUDENT RESPONSES)
@@ -29,18 +29,43 @@ data Student:
   | student(name :: String, birthday :: Date)
 end
 
-a = student("Alice", date(4, 1, 1999))
+data Student2:
+  | student2(name :: String, birthday :: Date2)
+sharing:
+  method _output(self):
+    VS.vs-seq(empty)
+  end
+end
+
+data Date2:
+  | date2(month :: Number, day :: Number, year :: Number)
+sharing:
+  method _output(self):
+    VS.vs-seq(empty)
+  end
+end
+
+a = student2("Alice", date2(7, 1, 2003))
+b = student2("Benjamin", date2(1, 1, 1))
+
 # Prompts can be strings, with lines separated by '\n', or lists of anything
 task-list :: List<{String; (Any -> Boolean)}> = [list:
-  {"First, represent a student named 'Alice' who was born in 1999 on April 1st."; _ == student("Alice", date(4, 1, 1999))},
+  {"First, use the Date definition to represent the date July 1st, 2019.";
+    _ == date(7, 1, 2019)},
+  {"Represent a student named 'Alice' who was born in 1999 on April 1st."; _ == student("Alice", date(4, 1, 1999))},
   {"Next, represent a student named 'Bob' whose birthday is March 30.";
     _ == impossible},
   {"Next, represent a student who was born on June 3rd, 2001, named 'Caroline'.";
     _ == student("Caroline", date(6, 3, 2001))},
-  {"We have defined a Student instance a. Using field accessors, can you find their birth month?"; _ == 4}
+  {"We have defined a Student instance called 'b'. Using field accessors (i.e., '.first'), can you find their name?"; _ == b.name},
+  {"We have defined a Student instance called 'a'. Using field accessors, can you find their birth month?"; _ == a.birthday.month}
 ]
 
-opening-prompt = "Welcome to the Data Druid demo! Here's a data definition for a binary tree:"
+opening-prompt = 
+  [list: "Welcome to the Data Druid demo!", 
+    "The following prompts will ask you to build some data instances. If the proposed scenario is impossible to represent with the given data definitions, enter 'impossible'.",
+    "Here's the data definitions for a date and a student:"]
+
 closing-prompt = "Congrats!"
 
 # for definition window
@@ -102,8 +127,8 @@ fun feedback(attempt :: Attempt) -> ED.ErrorDisplay:
   cases(Attempt) attempt:
     | correct => [ED.para: ED.text("Good job!")]
     | neutral => [ED.para: ]
-    | incorrect => [ED.para: ED.text("Incorrect, try again:")]
-    | pyret-error => [ED.para: ED.text("Encountered Pyret error(s), try again:")]
+    | incorrect => [ED.para: ED.text("Incorrect, try again.")]
+    | pyret-error => [ED.para: ED.text("Encountered Pyret error(s), try again.")]
   end
 end
 
@@ -129,15 +154,6 @@ fun get-task-list(items :: List<{Any; (Any -> Boolean)}>) -> List<Task>:
     end
 
     to-ED-unwrapped(contents).map({(x): [ED.para: x]})
-  where:
-    to-ED("test") is [list: [ED.para: ED.text("test")]]
-    to-ED([list: "a", circle(10, "solid", "green"), "b"]) is [list:
-      [ED.para: ED.text("a")],
-      [ED.para: ED.embed(circle(10, "solid", "green"))],
-      [ED.para: ED.text("b")]]
-    to-ED([list: [list: "a", "b"]]) is [list:
-      [ED.para: ED.text("a")],
-      [ED.para: ED.text("b")]]
   end
 
   # First prompt includes non-optional data definition
