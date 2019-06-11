@@ -481,28 +481,30 @@
         else $("#handle").css("display", "block");
       }
 
-      function toggleEditorSize() {
-        if(editorEvenSplit) {
-          editorEvenSplit = false;
-          setEditorSize(leftResizePct, rightResizePct);
-        }
-        else {
-          editorEvenSplit = true;
-          setEditorSize("0", "100");
+      var devMode = true;
+
+      window.toggleDevMode = function() {
+        if (devMode) {
+          devMode = false;
+          $("#filemenuli").css('display', 'none');
+          $("#insertli").css('display', 'none');
+          $("#publishli").css('display', 'none');
+          setEditorSize(0, 100);
+        } else {
+          devMode = true;
+          $("#filemenuli").css('display', 'list-item');
+          $("#insertli").css('display', 'list-item');
+          $("#publishli").css('display', 'list-item');
+          setEditorSize(50, 50);
         }
       }
+
+      window.toggleDevMode();
 
       // save
       // On Mac mod ends up mapping to command+s whereas on Windows and Linux it maps to ctrl+s.
       Mousetrap.bindGlobal('mod+s', function(e) {
         CPO.save();
-        e.stopImmediatePropagation();
-        e.preventDefault();
-      });
-
-      // resize, Toggle sizing of the editor window between 50% and last resize
-      Mousetrap.bindGlobal('ctrl+m', function(e){
-        toggleEditorSize();
         e.stopImmediatePropagation();
         e.preventDefault();
       });
