@@ -520,6 +520,8 @@ $(function() {
 
   var programToSave = initialProgram;
 
+  window.assignment_id = programToSave.then(function (p) { return p.getUniqueId(); });
+
   function showShareContainer(p) {
     //console.log('called showShareContainer');
     if(!p.shared) {

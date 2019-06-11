@@ -1,7 +1,7 @@
 import error-display as ED
 import srcloc as S
 import valueskeleton as VS
-import image
+include image
 
 
 ## CHOICE (FOR STUDENT RESPONSES)
@@ -60,20 +60,14 @@ defn-char-end = 3
 
 ## TASK
 
-newtype Task as TaskT
-is-Task = TaskT.test
-
-task :: (ED.ErrorDisplay, (Any -> Boolean) -> Task) = block:
-  var next-task-id = 1
-  lam(prompt, predicate) block:
-    task-id = next-task-id
-    next-task-id := next-task-id + 1
-    TaskT.brand({
-        id: task-id,
-        prompt: prompt,
-        predicate: predicate
-      })
-  end
+data Task:
+  | base-task(
+      prompt :: ED.ErrorDisplay,
+      predicate :: (Any -> Boolean))
+  | task(
+      id :: Number,
+      prompt :: ED.ErrorDisplay,
+      predicate :: (Any -> Boolean))
 end
 
 
@@ -145,7 +139,7 @@ fun get-task-list(items :: List<{Any; (Any -> Boolean)}>) -> List<Task>:
   end
 
   # First prompt includes non-optional data definition
-  first = task(
+  first = base-task(
     ED.h-sequence(
       to-ED(opening-prompt) + [list:
         [ED.para: instructor-defn],
@@ -159,11 +153,17 @@ fun get-task-list(items :: List<{Any; (Any -> Boolean)}>) -> List<Task>:
       prompt = ED.h-sequence(
         to-ED(item.{0}) + [list: [ED.para: ED.optional(instructor-defn)]],
         " ")
-      link(task(prompt, item.{1}), acc-tasks)
+      link(base-task(prompt, item.{1}), acc-tasks)
     end,
-    [list: task(ED.h-sequence(to-ED(closing-prompt), " "), {(_): false})])
+    [list: base-task(ED.h-sequence(to-ED(closing-prompt), " "), {(_): false})])
 
-  link(first, rest)
+  tasks = link(first, rest)
+  var id = -1
+  tasks.map(
+    lam(t) block:
+      id := id + 1
+      task(id, t.prompt, t.predicate)
+    end)
 end
 
 var tasks = get-task-list(task-list)
@@ -173,8 +173,7 @@ var attempt :: Attempt = neutral
 fun get-current-task() -> Annotated block:
   current-attempt = attempt
   attempt := pyret-error
-  annotated-task(feedback(current-attempt),
-    task(tasks.first.prompt, tasks.first.predicate))
+  annotated-task(feedback(current-attempt), tasks.first)
 end
 
 fun repl-hook(value):
