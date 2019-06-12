@@ -1,25 +1,7 @@
-import error-display as ED
-import srcloc as S
+include data-druid
 import valueskeleton as VS
 
-
-
-## CHOICE (FOR STUDENT RESPONSES)
-
-data Choice:
-  | yes
-  | no
-sharing:
-  method _output(self):
-    VS.vs-seq(empty)
-  end
-end
-
-impossible = no
-
-
 # Instructor-Provided Definitions
-# (This will be moved to a new file)
 
 data Date:
   | date(month :: Number, day :: Number, year :: Number)
@@ -69,135 +51,21 @@ opening-prompt =
 closing-prompt = "Congrats!"
 
 # for definition window
-defn-start = 24
+defn-start = 6
 defn-char-start = 0
-defn-end = 30
+defn-end = 12
 defn-char-end = 3
 
-#################################
-
-
-################## DEFINITIONS
-
-## TASK
-
-data Task:
-  | base-task(
-      prompt :: ED.ErrorDisplay,
-      predicate :: (Any -> Boolean))
-  | task(
-      id :: Number,
-      prompt :: ED.ErrorDisplay,
-      predicate :: (Any -> Boolean))
-end
-
-
-## ANNOTATED TASK (TASK W/ FEEBACK)
-
-data Annotated:
-  | annotated-task(
-      feedback :: ED.ErrorDisplay,
-      t :: Task)
-sharing:
-  method render-fancy-reason(self):
-    ED.h-sequence(link(
-        self.feedback,
-        self.t.prompt.contents), " ")
-  end
-end
-
-## ATTEMPT RESULT
-
-data Attempt:
-  | correct
-  | neutral
-  | incorrect
-  | pyret-error
-end
-
-################## FUNCTIONS
-
-fun feedback(attempt :: Attempt) -> ED.ErrorDisplay:
-  cases(Attempt) attempt:
-    | correct => [ED.para: ED.text("Good job!")]
-    | neutral => [ED.para: ]
-    | incorrect => [ED.para: ED.text("Incorrect, try again.")]
-    | pyret-error => [ED.para: ED.text("Encountered Pyret error(s), try again.")]
-  end
-end
+##################################################################
 
 instructor-defn =
-  ED.cmcode(S.srcloc("definitions://", defn-start, defn-char-start, 0, defn-end, defn-char-end, 0))
+  make-instructor-defn(defn-start, defn-char-start, defn-end, defn-char-end)
 
-fun get-task-list(items :: List<{Any; (Any -> Boolean)}>) -> List<Task>:
-  doc: "Takes instructor list and converts to a list of Task objects"
+tasks =
+  get-task-list(task-list, opening-prompt, closing-prompt, instructor-defn)
 
-  fun to-ED(contents :: Any) -> List<ED.ErrorDisplay>:
-    doc: "Converts anything into a list of renderable ErrorDisplays"
-
-    fun to-ED-unwrapped(elt :: Any) -> List<ED.ErrorDisplay>:
-      doc: "Converts anything into a list of ErrorDisplays"
-      ask:
-        | is-List(elt) then:
-          elt.foldr({(content, acc): to-ED-unwrapped(content) + acc}, empty)
-        | is-string(elt) then:
-          lines = string-split-all(elt, "\n")
-          lines.map(ED.text)
-        | otherwise: [list: ED.embed(elt)]
-      end
-    end
-
-    to-ED-unwrapped(contents).map({(x): [ED.para: x]})
-  end
-
-  # First prompt includes non-optional data definition
-  first = base-task(
-    ED.h-sequence(
-      to-ED(opening-prompt) + [list:
-        [ED.para: instructor-defn],
-        [ED.para: ED.text("Ready to begin? Enter yes or no.")]],
-      " "),
-    is-yes)
-
-  # All prompts after the first
-  rest = items.foldr(
-    lam(item, acc-tasks):
-      prompt = ED.h-sequence(
-        to-ED(item.{0}) + [list: [ED.para: ED.optional(instructor-defn)]],
-        " ")
-      link(base-task(prompt, item.{1}), acc-tasks)
-    end,
-    [list: base-task(ED.h-sequence(to-ED(closing-prompt), " "), {(_): false})])
-
-  tasks = link(first, rest)
-  var id = -1
-  tasks.map(
-    lam(t) block:
-      id := id + 1
-      task(id, t.prompt, t.predicate)
-    end)
-end
-
-var tasks = get-task-list(task-list)
-
-var attempt :: Attempt = neutral
-
-fun get-current-task() -> Annotated block:
-  current-attempt = attempt
-  attempt := pyret-error
-  annotated-task(feedback(current-attempt), tasks.first)
-end
-
-fun repl-hook(value):
-  cases(List) tasks:
-    | link(t, rest) =>
-      attempt := ask block:
-        | value == nothing then: neutral
-        | t.predicate(value) then:
-          tasks := rest
-          correct
-        | otherwise: incorrect
-      end
-    | empty => raise("Found end of task list. Should not have occured.")
-  end
-end
+session = state(neutral, tasks)
+funs = make-funs(session)
+get-current-attempt = funs.{0}
+get-current-task = funs.{1}
+repl-hook = funs.{2}

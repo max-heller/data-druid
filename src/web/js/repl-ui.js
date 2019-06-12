@@ -235,9 +235,10 @@
           let task;
           let attemptResult;
           rr.runThunk(function() {
+            let getCurrentAttempt = rr.getField(rr.modules["definitions://"], "defined-values")["get-current-attempt"];
             let getCurrentTask = rr.getField(rr.modules["definitions://"], "defined-values")["get-current-task"];
-            attemptResult = rr.getField(rr.modules["definitions://"], "defined-values")["attempt"].$var.$name;
             return rr.safeCall(function(){
+              attemptResult = getCurrentAttempt.app().$name;
               task = getCurrentTask.app();
               return renderAndDisplayError(rr, task,
                   null, false, null, "check-block check-block-failed attempt attempt-" + attemptResult);
