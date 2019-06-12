@@ -41,6 +41,8 @@
 
     var RUNNING_SPINWHEEL_DELAY_MS = 1000;
 
+    let studentValues = [];
+
     function merge(obj, extension) {
       var newobj = {};
       Object.keys(obj).forEach(function(k) {
@@ -174,7 +176,18 @@
                     var runResult = rr.getField(loadLib, "internal").getModuleResultResult(v);
                     console.log("Time to run compiled program:", JSON.stringify(runResult.stats));
                     if(rr.isSuccessResult(runResult)) {
+                      let predicates = [rr.getField(rr.modules["definitions://"], "defined-values")["foo"]];
+
                       return rr.safeCall(function() {
+                        let predicateResults = predicates.map(function(predicate) {
+                          // catchers are the locations of data instances that satisfy the predicate
+                          let catchers = studentValues.filter(sv => predicate.app(sv.val)).map(sv => sv.loc);
+                          return {
+                            predicate: predicate,
+                            catchers: catchers
+                          }
+                        });
+                        console.log(predicateResults);
                         return checkUI.drawCheckResults(output, CPO.documents, rr,
                                                         runtime.getField(runResult.result, "checks"), v);
                       }, function(_) {
@@ -717,6 +730,10 @@
             return repl.runtime.toReprJS(val, repl.runtime.ReprMethods["$cpo"]);
           }, function(container) {
             if (repl.runtime.isSuccessResult(container)) {
+              studentValues.push({val: val, loc: loc});
+              console.log(studentValues);
+              var pos = outputUI.Position.fromSrcArray(loc, CPO.documents, {});
+              pos.highlight('#ff0000');
               $(output)
                 .append($("<div>").addClass("trace")
                         .append($("<span>").addClass("trace").text("Trace #" + (++replOutputCount)))
