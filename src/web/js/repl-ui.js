@@ -85,6 +85,85 @@
       );
     }
 
+    // This predicate rendering system is based on examplar's chaff rendering
+    // (https://github.com/brownplt/examplar)
+    function renderPredicateResults(predicates) {
+      let results = predicates.map(predicate => {
+        // catchers are the locations of data instances that satisfy the predicate
+        let catchers = studentValues.filter(sv => predicate.app(sv.val)).map(sv => sv.loc);
+        return {
+          // TODO: figure out better identifier for predicate (way to get name?)
+          predicate: predicate,
+          catchers: catchers
+        }
+      });
+      console.log("predicate results:", results);
+
+      let numPredicates = predicates.length;
+      let satisfied = results.reduce(
+        (acc, res) => acc + Number(res.catchers.length > 0), 0);
+      console.log(satisfied + " predicate(s) satisfied");
+
+      function renderPredicate(catchers) {
+        let predicate = document.createElement('a');
+        predicate.setAttribute('href', '#');
+        predicate.classList.add('predicate');
+        predicate.textContent = '🐛';
+
+        if (catchers.length > 0) predicate.classList.add('satisfied');
+
+        predicate.addEventListener('click', e => e.preventDefault());
+
+        // Highlight on hover, remove highlight on focus loss
+        predicate.addEventListener('mouseenter', function () {
+          catchers.forEach(loc => loc.highlight('#91ccec'));
+        });
+        predicate.addEventListener('mouseleave', function () {
+          catchers.forEach(loc => loc.highlight(''));
+        });
+
+        return predicate;
+      }
+
+      status_widget.predicate_graph.value = {
+        numerator: satisfied, denominator: numPredicates
+      };
+
+      let predicate_info = document.createElement('div');
+      predicate_info.classList.add('predicate_info');
+
+      let intro = document.createElement('p');
+      // TODO: change to a more appropriate message
+      intro.textContent = `You satisfied ${satisfied} out of ${numPredicates} predicates:`;
+      predicate_info.appendChild(intro);
+
+      let predicate_list = document.createElement('ul');
+      predicate_list.classList.add('predicate_list');
+
+      results.map(result => render_predicate(result.catchers))
+        .forEach(function (predicate_widget) {
+          let li = document.createElement('li');
+          li.appendChild(predicate_widget);
+          predicate_list.appendChild(li);
+        });
+
+      predicate_info.appendChild(predicate_list);
+
+      let outro = document.createElement('p');
+      // TODO: change to something more appropriate
+      outro.textContent = "The predicates you satisfied are highlighted above in blue. Mouseover a predicate to see which of your examples satisfied it.";
+      predicate_info.appendChild(outro);
+
+      output.append(predicate_info);
+
+      if (satisfied === numPredicates) {
+        let reminder = document.createElement('p');
+        // TODO: change
+        reminder.textContent = "Nice work! Remember, the set of predicates in Playground does not cover every interesting case, so keep writing examples!";
+        predicate_info.appendChild(reminder);
+      }
+    }
+
     // the result of applying `displayResult` is a function that MUST
     // NOT BE CALLED ON THE PYRET STACK.
     function displayResult(output, callingRuntime, resultRuntime, isMain, updateItems) {
@@ -179,15 +258,8 @@
                       let predicates = [rr.getField(rr.modules["definitions://"], "defined-values")["foo"]];
 
                       return rr.safeCall(function() {
-                        let predicateResults = predicates.map(function(predicate) {
-                          // catchers are the locations of data instances that satisfy the predicate
-                          let catchers = studentValues.filter(sv => predicate.app(sv.val)).map(sv => sv.loc);
-                          return {
-                            predicate: predicate,
-                            catchers: catchers
-                          }
-                        });
-                        console.log(predicateResults);
+                        renderPredicateResults(predicates);
+                        studentValues = [];
                         return checkUI.drawCheckResults(output, CPO.documents, rr,
                                                         runtime.getField(runResult.result, "checks"), v);
                       }, function(_) {
@@ -722,6 +794,7 @@
       // SETUP FOR TRACING ALL OUTPUTS
       var replOutputCount = 0;
       outputUI.installRenderers(repl.runtime);
+
       repl.runtime.setParam("onTrace", function(loc, val, url) {
         if (repl.runtime.getParam("currentMainURL") !== url) { return { "onTrace": "didn't match" }; }
         if (repl.runtime.isNothing(val)) { return { "onTrace": "was nothing" }; }
@@ -731,7 +804,7 @@
           }, function(container) {
             if (repl.runtime.isSuccessResult(container)) {
               studentValues.push({val: val, loc: loc});
-              console.log(studentValues);
+              console.log("student values:", studentValues);
               var pos = outputUI.Position.fromSrcArray(loc, CPO.documents, {});
               pos.highlight('#ff0000');
               $(output)
