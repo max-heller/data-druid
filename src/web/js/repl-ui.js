@@ -165,8 +165,8 @@
     // (https://github.com/brownplt/examplar)
     function renderPredicateResults(predicates) {
       let results = predicates.map(predicate => {
-        // catchers are the locations of data instances that satisfy the predicate
-        let catchers = studentValues.filter(sv => predicate.app(sv.val)).map(sv => sv.loc);
+        // catchers are the positions of data instances that satisfy the predicate
+        let catchers = studentValues.filter(sv => predicate.app(sv.val)).map(sv => sv.pos);
         return {
           // TODO: figure out better identifier for predicate (way to get name?)
           predicate: predicate,
@@ -318,7 +318,10 @@
                     var runResult = rr.getField(loadLib, "internal").getModuleResultResult(v);
                     console.log("Time to run compiled program:", JSON.stringify(runResult.stats));
                     if(rr.isSuccessResult(runResult)) {
-                      let predicates = [rr.getField(rr.modules["definitions://"], "defined-values")["foo"]];
+                      let defined = rr.getField(rr.modules["definitions://"], "defined-values");
+                      let predicates = Object.keys(defined)
+                                             .filter(key => key.startsWith("pred"))
+                                             .map(key => defined[key]);
 
                       return rr.safeCall(function() {
                         renderPredicateResults(predicates);
@@ -687,15 +690,9 @@
             return repl.runtime.toReprJS(val, repl.runtime.ReprMethods["$cpo"]);
           }, function(container) {
             if (repl.runtime.isSuccessResult(container)) {
-              studentValues.push({val: val, loc: loc});
+              let pos = outputUI.Position.fromSrcArray(loc, CPO.documents, {});
+              studentValues.push({val: val, pos: pos});
               console.log("student values:", studentValues);
-              var pos = outputUI.Position.fromSrcArray(loc, CPO.documents, {});
-              pos.highlight('#ff0000');
-              $(output)
-                .append($("<div>").addClass("trace")
-                        .append($("<span>").addClass("trace").text("Trace #" + (++replOutputCount)))
-                        .append(container.result));
-              scroll(output);
             } else {
               $(output).append($("<div>").addClass("error trace")
                                .append($("<span>").addClass("trace").text("Trace #" + (++replOutputCount)))
