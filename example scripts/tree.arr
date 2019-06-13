@@ -1,4 +1,5 @@
 include data-druid
+include image
 
 # Instructor-Provided Definitions
 
@@ -17,12 +18,11 @@ end
 # Prompts can be strings, with lines separated by '\n', or lists of anything
 task-list :: List<{Any; (Any -> Boolean)}> = [list:
   {"First, construct an empty tree."; _ == mt},
-  {"Next, construct a tree made of a single node with value 5.";
+  {[list: "Next, construct the following tree:",
+      image-url("https://i.imgur.com/jR9KOsz.png")];
     _ == node(5, mt, mt)},
   {"Next, construct a tree with root node 1, left child 2, and right child 3.";
-    _ == node(1, node(2, mt, mt), node(3, mt, mt))},
-  {"Is it possible to construct a tree with this definition with 5 as its root and 1, 2, and 3 as its direct children? Enter yes or no.";
-    is-no},
+    _ == node(1, node(2, mt, mt), node(3, mt, mt))}
 ]
 
 opening-prompt = "Welcome to the Data Druid demo! Here's a data definition for a binary tree:"
