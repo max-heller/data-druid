@@ -318,10 +318,9 @@
                     var runResult = rr.getField(loadLib, "internal").getModuleResultResult(v);
                     console.log("Time to run compiled program:", JSON.stringify(runResult.stats));
                     if(rr.isSuccessResult(runResult)) {
-                      let defined = rr.getField(rr.modules["definitions://"], "defined-values");
-                      let predicates = Object.keys(defined)
-                                             .filter(key => key.startsWith("pred"))
-                                             .map(key => defined[key]);
+                      let predicateModuleName = Object.keys(rr.modules).find(key => key.endsWith(window.assignmentID));
+                      let defined = rr.getField(rr.modules[predicateModuleName], "defined-values");
+                      let predicates = Object.values(defined).filter(rr.isFunction);
 
                       return rr.safeCall(function() {
                         renderPredicateResults(predicates);

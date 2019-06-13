@@ -259,6 +259,9 @@ $(function() {
         } else {
           programToSave = Q.fcall(function() { return null; });
         }
+        if(params["get"] && params["get"]["assignment"]) {
+          window.assignmentID = params["get"]["assignment"];
+        }
       });
       api.collection.fail(function() {
         $("#connectButton").text("Connect to Google Drive");
@@ -303,6 +306,9 @@ $(function() {
           });
         });
       });
+    }
+    if(params["get"] && params["get"]["assignment"]) {
+      window.assignmentID = params["get"]["assignment"];
     }
     if(programLoad) {
       programLoad.fail(function(err) {
