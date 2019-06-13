@@ -33,11 +33,87 @@
                       util) {
     var ffi = runtime.ffi;
 
-    var output = jQuery("<div id='output' aria-hidden='true' class='cm-s-default'>");
+    var output = jQuery("<div id='output' class='cm-s-default'>");
+    output.append($("<p class='predicate_info'>Playground will todo<p>"));
+    
     var outputPending = jQuery("<span>").text("Gathering results...");
     var outputPendingHidden = true;
     var canShowRunningIndicator = false;
     var running = false;
+
+    class Graph {
+      constructor(value) {
+        let xmlns = "http://www.w3.org/2000/svg";
+        let svg = document.createElementNS(xmlns, "svg");
+
+        svg.setAttributeNS(null, "viewBox", "0 0 36 36");
+        svg.classList.add("circular-chart");
+        svg.classList.add("blue");
+
+        let circle = "M18 2.0845 "
+                   + "a 15.9155 15.9155 0 0 1 0 31.831 "
+                   + "a 15.9155 15.9155 0 0 1 0 -31.831";
+
+        let bg = document.createElementNS(xmlns, "path");
+        bg.classList.add("circle-bg");
+        bg.setAttributeNS(null, 'd', circle);
+
+        let fg = document.createElementNS(xmlns, "path");
+        fg.classList.add("circle");
+        fg.setAttributeNS(null, 'd', circle);
+        fg.setAttributeNS(null, 'stroke-dasharray', "0, 100");
+
+        let text = document.createElementNS(xmlns, "text");
+        text.classList.add("percentage");
+        text.setAttributeNS(null, 'x', "18");
+        text.setAttributeNS(null, 'y', "20.35");
+
+        this.bg = svg.appendChild(bg);
+        this.fg = svg.appendChild(fg);
+        this.text = svg.appendChild(text);
+        this.element = svg;
+
+        let fallback = {numerator: "none", denominator: "none"};
+        this.numerator = (value || fallback).numerator;
+        this.denominator = (value || fallback).denominator;
+        this.value = {numerator: this.numerator, denominator: this.denominator};
+      }
+
+      set value(value){
+        if (typeof value.numerator === "number" &&
+            typeof value.denominator === "number")
+        {
+          this.numerator = value.numerator;
+          this.denominator = value.denominator;
+          this.fg.setAttributeNS(null, 'stroke-dasharray',
+            `${(value.numerator / value.denominator) * 100}, 100`);
+          this.text.innerHTML = `${value.numerator}⁄${value.denominator}`;
+        } else {
+          this.fg.setAttributeNS(null, 'stroke-dasharray', "0, 100");
+          this.text.innerHTML = "?";
+        }
+      }
+    }
+
+    class StatusWidget {
+      constructor() {
+        let element = document.createElement('div');
+        element.classList.add("playground_status_widget");
+
+        let predicate_side = document.createElement('div');
+        predicate_side.classList.add("playground_status");
+        predicate_side.innerHTML = "Predicates<br>Satisfied";
+        let predicate_graph = new Graph();
+        predicate_side.prepend(predicate_graph.element);
+
+        this.predicate_side = element.appendChild(predicate_side);
+        this.element = element;
+
+        this.predicate_graph = predicate_graph;
+      }
+    }
+
+    var status_widget = new StatusWidget();
 
     var RUNNING_SPINWHEEL_DELAY_MS = 1000;
 
@@ -85,7 +161,7 @@
       );
     }
 
-    // This predicate rendering system is based on examplar's chaff rendering
+    // This predicate rendering system is based on examplar's predicate rendering
     // (https://github.com/brownplt/examplar)
     function renderPredicateResults(predicates) {
       let results = predicates.map(predicate => {
@@ -100,9 +176,9 @@
       console.log("predicate results:", results);
 
       let numPredicates = predicates.length;
-      let satisfied = results.reduce(
+      let numSatisfied = results.reduce(
         (acc, res) => acc + Number(res.catchers.length > 0), 0);
-      console.log(satisfied + " predicate(s) satisfied");
+      console.log(numSatisfied + " predicate(s) satisfied");
 
       function renderPredicate(catchers) {
         let predicate = document.createElement('a');
@@ -129,53 +205,49 @@
         numerator: satisfied, denominator: numPredicates
       };
 
-      let predicate_info = document.createElement('div');
-      predicate_info.classList.add('predicate_info');
+      let predicateInfo = document.createElement('div');
+      predicateInfo.classList.add('predicate_info');
 
       let intro = document.createElement('p');
       // TODO: change to a more appropriate message
       intro.textContent = `You satisfied ${satisfied} out of ${numPredicates} predicates:`;
-      predicate_info.appendChild(intro);
+      predicateInfo.appendChild(intro);
 
       let predicate_list = document.createElement('ul');
       predicate_list.classList.add('predicate_list');
 
-      results.map(result => render_predicate(result.catchers))
+      results.map(result => renderPredicate(result.catchers))
         .forEach(function (predicate_widget) {
           let li = document.createElement('li');
           li.appendChild(predicate_widget);
           predicate_list.appendChild(li);
         });
 
-      predicate_info.appendChild(predicate_list);
+      predicateInfo.appendChild(predicate_list);
 
       let outro = document.createElement('p');
       // TODO: change to something more appropriate
       outro.textContent = "The predicates you satisfied are highlighted above in blue. Mouseover a predicate to see which of your examples satisfied it.";
-      predicate_info.appendChild(outro);
+      predicateInfo.appendChild(outro);
 
-      output.append(predicate_info);
+      output.append(predicateInfo);
 
       if (satisfied === numPredicates) {
         let reminder = document.createElement('p');
         // TODO: change
         reminder.textContent = "Nice work! Remember, the set of predicates in Playground does not cover every interesting case, so keep writing examples!";
-        predicate_info.appendChild(reminder);
+        predicateInfo.appendChild(reminder);
       }
     }
 
     // the result of applying `displayResult` is a function that MUST
     // NOT BE CALLED ON THE PYRET STACK.
-    function displayResult(output, callingRuntime, resultRuntime, isMain, updateItems) {
-      // updateItems() is used to update the repl interaction history
-      //console.log('doing displayResult', isMain);
+    function displayResult(output, callingRuntime, resultRuntime, isMain) {
       var runtime = callingRuntime;
       var rr = resultRuntime;
 
       // MUST BE CALLED ON THE PYRET STACK
       function renderAndDisplayError(runtime, error, stack, click, result) {
-        //console.log('renderAndDisplayError');
-        //updateItems(isMain);
         var error_to_html = errorUI.error_to_html;
         // `renderAndDisplayError` must be called on the pyret stack
         // because of this call to `pauseStack`
@@ -188,14 +260,9 @@
                 html.trigger('toggleHighlight');
                 html.addClass("highlights-active");
               });
-              html[0].setAttribute('aria-hidden', 'true');
               html.addClass('compile-error').appendTo(output);
-              //updateItems?
               if (click) html.click();
-            }).done(function () {
-              //updateItems(isMain);
-              restarter.resume(runtime.nothing)
-            });
+            }).done(function () {restarter.resume(runtime.nothing)});
         });
       }
 
@@ -217,7 +284,6 @@
           }
           else if(callingRuntime.isSuccessResult(result)) {
             result = result.result;
-            //updateItems?
             return ffi.cases(ffi.isEither, "is-Either", result, {
               left: function(compileResultErrors) {
                 closeAnimationIfOpen();
@@ -240,10 +306,7 @@
                       // pyret stack.
                       return renderAndDisplayError(callingRuntime, errors[i], [], true, result);
                     }), 0, errors.length);
-                  }, function (result) {
-                    //updateItems(isMain);
-                    return result;
-                  }, "renderMultipleErrors");
+                  }, function (result) { return result; }, "renderMultipleErrors");
               },
               right: function(v) {
                 // TODO(joe): This is a place to consider which runtime level
@@ -265,14 +328,12 @@
                       }, function(_) {
                         outputPending.remove();
                         outputPendingHidden = true;
-                        //updateItems(isMain);
                         return true;
                       }, "rr.drawCheckResults");
                     } else {
                       didError = true;
                       // `renderAndDisplayError` must be called in the context of the pyret stack.
                       // this application runs in the context of the above `rr.runThunk`.
-                      //updateItems?
                       return renderAndDisplayError(resultRuntime, runResult.exn.exn,
                                                    runResult.exn.pyretStack, true, runResult);
                     }
@@ -284,7 +345,6 @@
             });
           }
           else {
-            //updateItems?
             doneDisplay.reject("Error displaying output");
             console.error("Bad result: ", result);
             didError = true;
@@ -302,8 +362,6 @@
               snippets[i].CodeMirror.refresh();
             }
           }
-          updateItems(isMain);
-          //speakHistory(1);
           doneDisplay.resolve("Done displaying output");
           return callingRuntime.nothing;
         });
@@ -315,31 +373,14 @@
     function makeRepl(container, repl, runtime, options) {
 
       var Jsworld = worldLib;
-      var items = []; // repl interaction history
+      var items = [];
       var pointer = -1;
       var current = "";
-      function loadItem(backward) {
-        var thisItem;
-        while (true) {
-          if (pointer < 0 || pointer >= items.length) return;
-          thisItem = items[pointer];
-          if (thisItem.dup) {
-            if (backward) pointer++;
-            else pointer--;
-          } else break;
+      function loadItem() {
+        CM.setValue(items[pointer]);
         }
-        var thisCode = items[pointer].code;
-        CPO.sayAndForget(thisCode);
-        CM.setValue(thisCode);
-        CM.refresh();
-      }
-      function addToHistory(newItem) {
-        var prev = items[0];
-        if (prev && prev.code !== 'def//'
-          && prev.code === newItem.code) {
-          newItem.dup = true;
-        }
-        items.unshift(newItem);
+        function saveItem() {
+          items.unshift(CM.getValue());
       }
       function prevItem() {
         if (pointer === -1) {
@@ -347,18 +388,15 @@
         }
         if (pointer < items.length - 1) {
           pointer++;
-          if (pointer === (items.length - 1) &&
-              items[pointer].code === 'def//') {
-            pointer--;
-          } else {
-            loadItem('backward');
+          loadItem();
+          CM.refresh();
           }
         }
-      }
       function nextItem() {
         if (pointer >= 1) {
           pointer--;
           loadItem();
+          CM.refresh();
         } else if (pointer === 0) {
           CM.setValue(current);
           CM.refresh();
@@ -366,115 +404,11 @@
         }
       }
 
-      // a11y stuff
-
-      function outputText(elt) {
-        //console.log('outputText of', elt);
-        var text;
-        if (elt.classList.contains('test-results')) {
-          var eltChildren = elt.childNodes;
-          text = '';
-          for (var i = 0; i < eltChildren.length; i++) {
-            var eltI = eltChildren[i];
-            if (eltI.classList.contains('testing-summary')) {
-              var succ = eltI.getElementsByClassName('summary-bits');
-              if (succ.length > 0) {
-                text += eltI.getElementsByClassName('summary-passed')[0].innerText +
-                  ', ' + eltI.getElementsByClassName('summary-failed')[0].innerText + '. ';
-              } else {
-                text += eltI.innerText + '. ';
-              }
-            } else if (eltI.classList.contains('check-block-success') ||
-              eltI.classList.contains('check-block-failed')) {
-              var eltIChildren = eltI.childNodes;
-              for (j = 0; j < eltIChildren.length; j++) {
-                var eltIJ = eltIChildren[j];
-                if (!eltIJ.classList.contains('check-block-tests')) {
-                  text += eltIJ.innerText + '. ';
-                }
-              }
-            }
-            else {
-              text += eltI.innerText + '. ';
-            }
-          }
-        } else {
-          var ro = elt.getElementsByClassName('replOutput');
-          if (ro.length === 0) ro = elt.getElementsByClassName('replTextOutput');
-          if (ro.length > 0) text = ro[0].ariaText;
-          if (!text) text = elt.innerText;
-        }
-        return text;
-      }
-
-
-      function speakHistory(n) {
-        //console.log('doing speakHistory', n);
-        if (n === 0) { n = 10; }
-        var historySize = items.length;
-        //console.log('items =', items);
-        //console.log('historySize =', historySize);
-        if (n > historySize) { return false; }
-        var history = items[n-1];
-        //console.log('history=', history);
-        var isMain = (history.code === 'def//');
-        var recital;
-        if (isMain) {
-          recital = 'Loading definitions window';
-        } else {
-          recital = history.code;
-        }
-        if (history.erroroutput) {
-          recital += ' resulted in an error. ' + history.erroroutput;
-        } else {
-          if (isMain) {
-            if (!history.end && !history.start) {
-              recital += ' produced no output.';
-            } else {
-              recital += ' produced output: ';
-            }
-          } else {
-            if (!history.start) {
-              recital += ' produced no output.';
-            } else {
-              recital += ' evaluates to ';
-            }
-          }
-          var docOutput = document.getElementById('output').childNodes;
-          if (!history.end) {
-            if (history.start) {
-              recital += outputText(docOutput[history.start]);
-            }
-          } else {
-            //console.log('speakhistory from', history.start, 'to', history.end);
-            for (var i = history.start; i < history.end; i++) {
-              recital += '. ' + outputText(docOutput[i]);
-            }
-          }
-        }
-        CPO.sayAndForget(recital);
-        return true;
-      }
-
-      function speakChar(cm) {
-        var pos = cm.getCursor();
-        var ln = pos.line; var ch = pos.ch;
-        var char = cm.getRange({line: ln, ch: ch}, {line: ln, ch: ch+1});
-        if (char === " ") char = "space";
-        CPO.sayAndForget(char);
-      }
-
-
-      // end a11y stuff
-
       container.append(mkWarningUpper());
       container.append(mkWarningLower());
 
       var promptContainer = jQuery("<div class='prompt-container'>");
       var prompt = jQuery("<span>").addClass("repl-prompt").attr("title", "Enter Pyret code here");
-      var promptSign = $('<span aria-hidden="true" aria-label="REPL prompt">').
-        addClass('repl-prompt-sign');
-      prompt.append(promptSign);
       function showPrompt() {
         promptContainer.hide();
         promptContainer.fadeIn(100);
@@ -499,8 +433,6 @@
         }, 200);
       }
       runtime.setStdout(function(str) {
-          ct_log(str);
-          output.append($("<pre>").addClass("replPrint").text(str));
         });
       var currentZIndex = 15000;
       runtime.setParam("current-animation-port", function(dom, title, closeCallback) {
@@ -694,8 +626,8 @@
       });
 
       var breakButton = options.breakButton;
-      var stopLi = $('#stopli');
-      container.append(output).append(promptContainer);
+      container[0].appendChild(status_widget.element);
+      container.append(output);
 
       var img = $("<img>").attr({
         "src": "/img/pyret-spin.gif",
@@ -704,51 +636,8 @@
         "vertical-align": "middle"
       });
       var runContents;
-      function updateItems(isMain) {
-        //console.log('doing updateItems', isMain);
-        var thiscode = items[0];
-        var docOutput = document.getElementById("output");
-        var docOutputLen = docOutput.childNodes.length;
-        var lastOutput = docOutput.lastElementChild;
-        //console.log('lastOutput=', lastOutput);
-        var text;
-        if (lastOutput && lastOutput.classList.contains('compile-error')) {
-          //console.log('result is a compile-error');
-          thiscode.start = docOutputLen - 1;
-          var loChildren = lastOutput.childNodes;
-          //console.log('loChildren=', loChildren);
-          text = '';
-          for (var i = 0; i < loChildren.length; i++) {
-            var thisChild = loChildren[i];
-            //console.log('thisChild=', thisChild);
-            if (thisChild.tagName === 'DIV' && thisChild.classList.contains('cm-snippet')) {
-              if (!isMain) {
-                //console.log('adding in', thiscode.code);
-                text += ' in ' + thiscode.code + '.';
-              }
-            } else if (thisChild.tagName === 'P') {
-              //console.log('adding', thisChild.innerText);
-              text += ' ' + thisChild.innerText;
-            }
-          }
-          //console.log('final text=', text);
-          thiscode.erroroutput = text;
-        } else if (isMain) {
-          //console.log('result is a successful load, 0 to', docOutputLen);
-          thiscode.start = 0;
-          thiscode.end = docOutputLen;
-        } else if (lastOutput && lastOutput.classList.contains('echo-container')) {
-          thiscode.start = false;
-        } else {
-          //console.log('result is a successful single interaction');
-          thiscode.start = docOutputLen - 1;
-        }
-        speakHistory(1);
-        return true;
-      }
       function afterRun(cm) {
         return function() {
-          //speakHistory(1);
           running = false;
           outputPending.remove();
           outputPendingHidden = true;
@@ -756,15 +645,12 @@
           options.runButton.empty();
           options.runButton.append(runContents);
           options.runButton.attr("disabled", false);
-          options.runDropdown.attr('disabled', false);
           breakButton.attr("disabled", true);
-          stopLi.attr('disabled', true);
           canShowRunningIndicator = false;
           if(cm) {
             cm.setValue("");
             cm.setOption("readonly", false);
           }
-          //speakHistory(1);
           //output.get(0).scrollTop = output.get(0).scrollHeight;
           showPrompt();
           setTimeout(function(){
@@ -778,9 +664,7 @@
         setTimeout(function() {
          if(canShowRunningIndicator) {
             options.runButton.attr("disabled", true);
-            options.runDropdown.attr('disabled', true);
             breakButton.attr("disabled", false);
-            stopLi.attr('disabled', false);
             options.runButton.empty();
             var text = $("<span>").text("Running...");
             text.css({
@@ -824,105 +708,9 @@
         });
       });
 
-      repl.runtime.setParam("onSpy", function(loc, message, locs, names, vals) {
-        return repl.runtime.safeCall(function() {
-          /*
-          var toBeRepred = [];
-          for (var i = 0; i < names.length; i++)
-            toBeRepred.push({name: names[i], val: vals[i]});
-          toBeRepred.push({name: "Message", val: message, method: repl.runtime.ReprMethods._tostring});
-          */
-          // Push this afterward, to keep rendered aligned with renderedLocs below
-          return repl.runtime.safeCall(function() {
-            return repl.runtime.toReprJS(message, repl.runtime.ReprMethods._tostring);
-          }, function(message) {
-            return repl.runtime.safeCall(function() {
-              return repl.runtime.raw_array_map(repl.runtime.makeFunction(function(val) {
-                 return repl.runtime.toReprJS(val, repl.runtime.ReprMethods["$cpo"]);
-              }, "spy-to-repr"), vals);
-            }, function(rendered) {
-              return {
-                message: message,
-                rendered: rendered
-              }
-            }, "CPO-onSpy-render-values");
-          }, "CPO-onSpy-render-message");
-        }, function(spyInfo) {
-          var message = spyInfo.message;
-          var rendered = spyInfo.rendered
-          // Note: renderedLocs is one element shorter than rendered
-          var renderedLocs = locs.map(repl.runtime.makeSrcloc);
-          var spyBlock = $("<div>").addClass("spy-block");
-          spyBlock.append($("<img>").addClass("spyglass").attr("src", "/img/spyglass.gif"));
-          if (message !== "") {
-            spyBlock.append($("<div>").addClass("spy-title").append(message));
-          }
-
-          var table = $("<table>");
-          table
-            .append($("<th>")
-                    .append($("<tr>")
-                            .append($("<td>").text("Name"))
-                            .append($("<td>").text("Value"))));
-          spyBlock.append(table);
-          var palette = outputUI.makePalette();
-          function color(i) {
-            return outputUI.hueToRGB(palette(i));
-          }
-          for (let i = 0; i < names.length; i++) {
-            let row = $("<tr>");
-            table.append(row);
-            let name = $("<a>").text(names[i]).addClass("highlight");
-            name.attr("title", "Click to scroll source location into view");
-            if (locs[i].length === 7) {
-              try {
-                var pos = outputUI.Position.fromSrcArray(locs[i], CPO.documents, {});
-                name.hover((function(pos) {
-                  return function() {
-                    pos.hint();
-                    pos.blink(color(i));
-                  }
-                })(pos),
-                (function(pos) {
-                  return function() {
-                    outputUI.unhintLoc();
-                    pos.blink(undefined);
-                  };
-                })(pos));
-                name.on("click", (function(pos) {
-                  return function() { pos.goto(); };
-                })(pos));
-              } catch (e) {
-                name.attr("title", "From " + runtime.getField(runtime.makeSrcloc(locs[i]), "format").app(true));
-              }
-              // TODO: this is ugly code, copied from output-ui because
-              // getting the right srcloc library is hard
-              let cmLoc = {
-                source: locs[i][0],
-                start: {line: locs[i][1] - 1, ch: locs[i][3]},
-                end: {line: locs[i][4] - 1, ch: locs[i][6]}
-              };
-              /*
-              name.on("click", function() {
-                outputUI.emphasizeLine(CPO.documents, cmLoc);
-                CPO.documents[cmLoc.source].scrollIntoView(cmLoc.start, 100);
-              });
-              */
-            }
-            row.append($("<td>").append(name).append(":"));
-            row.append($("<td>").append(rendered[i]));
-          }
-          $(output).append(spyBlock);
-          return repl.runtime.nothing;
-        }, "CPO-onSpy");
-      });
-
       var runMainCode = function(src, uiOptions) {
         if(running) { return; }
         running = true;
-        items = [];
-        var thiscode = {code: 'def//', erroroutput: false, start: false, end: false, dup: false};
-        addToHistory(thiscode);
         output.empty();
         promptContainer.hide();
         lastEditorRun = uiOptions.cm || null;
@@ -945,28 +733,17 @@
           checkAll: false // NOTE(joe): this is a good spot to fetch something from the ui options
                           // if this becomes a check box somewhere in CPO
         };
-        var replResult = repl.restartInteractions(src, options);
-        var startRendering = replResult.then(function(r) {
-          maybeShowOutputPending();
-          return r;
-        });
-        var doneRendering = startRendering.then(displayResult(output, runtime, repl.runtime, true, updateItems)).fail(function(err) {
-          console.error("Error displaying result: ", err);
-        });
-        doneRendering.fin(afterRun(false));
+
+        // TODO: logging and/or injection?
       };
 
       var runner = function(code) {
         if(running) { return; }
         running = true;
-        var thiscode = {code: code, erroroutput: false, start: false, end: false, dup: false};
-        addToHistory(thiscode);
+        items.unshift(code);
         pointer = -1;
         var echoContainer = $("<div class='echo-container'>");
         var echoSpan = $("<span>").addClass("repl-echo");
-        var echoPromptSign = $('<span aria-hidden="true" aria-label="REPL prompt">').
-          addClass('repl-prompt-sign');
-        echoSpan.append(echoPromptSign);
         var echo = $("<textarea>");
         echoSpan.append(echo);
         echoContainer.append(echoSpan);
@@ -986,7 +763,7 @@
           maybeShowOutputPending();
           return r;
         });
-        var doneRendering = startRendering.then(displayResult(output, runtime, repl.runtime, false, updateItems)).fail(function(err) {
+        var doneRendering = startRendering.then(displayResult(output, runtime, repl.runtime, false)).fail(function(err) {
           console.error("Error displaying result: ", err);
         });
         doneRendering.fin(afterRun(CM));
@@ -1012,19 +789,7 @@
             'Esc Right': "goForwardSexp",
             'Alt-Right': "goForwardSexp",
             'Ctrl-Left': "goBackwardToken",
-            'Ctrl-Right': "goForwardToken",
-            'Left': function(cm) { cm.moveH(-1, 'char'); speakChar(cm); },
-            'Right': function(cm) { cm.moveH(1, 'char'); speakChar(cm); },
-            "Alt-1": function() { speakHistory(1); },
-            "Alt-2": function() { speakHistory(2); },
-            "Alt-3": function() { speakHistory(3); },
-            "Alt-4": function() { speakHistory(4); },
-            "Alt-5": function() { speakHistory(5); },
-            "Alt-6": function() { speakHistory(6); },
-            "Alt-7": function() { speakHistory(7); },
-            "Alt-8": function() { speakHistory(8); },
-            "Alt-9": function() { speakHistory(9); },
-            "Alt-0": function() { speakHistory(0); }
+            'Ctrl-Right': "goForwardToken"
           })
         }
       }).cm;
@@ -1042,7 +807,6 @@
 
       var onBreak = function() {
         breakButton.attr("disabled", true);
-        stopLi.attr('disabled', true);
         repl.stop();
         closeAnimationIfOpen();
         Jsworld.shutdown({ cleanShutdown: true });
@@ -1050,7 +814,6 @@
       };
 
       breakButton.attr("disabled", true);
-      stopLi.attr('disabled', true);
       breakButton.click(onBreak);
 
       return {
