@@ -1925,6 +1925,7 @@ button.controller {
 
 .playground_status_widget {
   display: flex;
+  justify-content: center;
   flex-direction: row;
   width: 100%;
   position: relative;

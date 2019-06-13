@@ -103,17 +103,17 @@
         let predicate_side = document.createElement('div');
         predicate_side.classList.add("playground_status");
         predicate_side.innerHTML = "Predicates<br>Satisfied";
-        let predicate_graph = new Graph();
-        predicate_side.prepend(predicate_graph.element);
+        let predicateGraph = new Graph();
+        predicate_side.prepend(predicateGraph.element);
 
         this.predicate_side = element.appendChild(predicate_side);
         this.element = element;
 
-        this.predicate_graph = predicate_graph;
+        this.predicateGraph = predicateGraph;
       }
     }
 
-    var status_widget = new StatusWidget();
+    var statusWidget = new StatusWidget();
 
     var RUNNING_SPINWHEEL_DELAY_MS = 1000;
 
@@ -201,8 +201,8 @@
         return predicate;
       }
 
-      status_widget.predicate_graph.value = {
-        numerator: satisfied, denominator: numPredicates
+      statusWidget.predicateGraph.value = {
+        numerator: numSatisfied, denominator: numPredicates
       };
 
       let predicateInfo = document.createElement('div');
@@ -210,7 +210,7 @@
 
       let intro = document.createElement('p');
       // TODO: change to a more appropriate message
-      intro.textContent = `You satisfied ${satisfied} out of ${numPredicates} predicates:`;
+      intro.textContent = `You satisfied ${numSatisfied} out of ${numPredicates} predicates:`;
       predicateInfo.appendChild(intro);
 
       let predicate_list = document.createElement('ul');
@@ -232,7 +232,7 @@
 
       output.append(predicateInfo);
 
-      if (satisfied === numPredicates) {
+      if (numSatisfied === numPredicates) {
         let reminder = document.createElement('p');
         // TODO: change
         reminder.textContent = "Nice work! Remember, the set of predicates in Playground does not cover every interesting case, so keep writing examples!";
@@ -626,7 +626,7 @@
       });
 
       var breakButton = options.breakButton;
-      container[0].appendChild(status_widget.element);
+      container[0].appendChild(statusWidget.element);
       container.append(output);
 
       var img = $("<img>").attr({
@@ -735,6 +735,15 @@
         };
 
         // TODO: logging and/or injection?
+        var replResult = repl.restartInteractions(src, options);
+        var startRendering = replResult.then(function(r) {
+          maybeShowOutputPending();
+          return r;
+        });
+        var doneRendering = startRendering.then(displayResult(output, runtime, repl.runtime, true)).fail(function(err) {
+          console.error("Error displaying result: ", err);
+        });
+        doneRendering.fin(afterRun(false));
       };
 
       var runner = function(code) {
