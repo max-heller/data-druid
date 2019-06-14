@@ -153,7 +153,7 @@ requirejs(["pyret-base/js/runtime", "pyret-base/js/post-load-hooks", "pyret-base
         console.error("Couldn't start REPL: ", err);
       });
       interactionsReady.then(function(result) {
-        $("#runButton").attr("disabled", false);
+        $("#runButton").attr("disabled", false).click();
         $("#runDropdown").attr("disabled", false);
         clearInterval($("#loader").data("intervalID"));
         $("#loader").hide();
