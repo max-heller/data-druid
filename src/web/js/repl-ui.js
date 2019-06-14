@@ -459,6 +459,14 @@
       }
       promptContainer.append(prompt);
 
+      let impossibleButton = document.createElement("button");
+      impossibleButton.id = "impossibleButton";
+      impossibleButton.innerText = "Impossible!";
+      impossibleButton.onclick = function(button) {
+        runner("impossible");
+      };
+      prompt.append(impossibleButton);
+
       container.on("click", function(e) {
         if($(CM.getTextArea()).parent().offset().top < e.pageY) {
           CM.focus();

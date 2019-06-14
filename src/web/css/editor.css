@@ -420,6 +420,14 @@ div.spy-block > table > th { display: none; }
   border-bottom-right-radius: 5px;
 }
 
+#impossibleButton {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  margin: 5px;
+  z-index: 10;
+}
+
 .expandText{
   position: absolute;
   top: 0;
@@ -497,6 +505,7 @@ div.spy-block > table > th { display: none; }
 
 .prompt-container {
   padding-top: 5px;
+  position: relative;
 }
 .echo-container {
   overflow: hidden;
