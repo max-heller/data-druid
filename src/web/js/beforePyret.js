@@ -342,7 +342,7 @@ $(function() {
   });
 
   function setTitle(progName) {
-    document.title = progName + " - code.pyret.org";
+    document.title = progName + " - Data Druid: Classroom";
   }
   CPO.setTitle = setTitle;
 
