@@ -19,7 +19,7 @@ data Tree2:
       right :: Tree2)
 sharing:
   method _output(self):
-    VS.vs-seq(empty)
+    VS.vs-str("Output intentionally hidden.")
   end
 end
 

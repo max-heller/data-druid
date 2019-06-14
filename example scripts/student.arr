@@ -15,7 +15,7 @@ data Student2:
   | student2(name :: String, birthday :: Date2)
 sharing:
   method _output(self):
-    VS.vs-seq(empty)
+    VS.vs-str("Output intentionally hidden.")
   end
 end
 
@@ -23,7 +23,7 @@ data Date2:
   | date2(month :: Number, day :: Number, year :: Number)
 sharing:
   method _output(self):
-    VS.vs-seq(empty)
+    VS.vs-str("Output intentionally hidden.")
   end
 end
 
