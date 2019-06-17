@@ -166,7 +166,7 @@
     function renderPredicateResults(predicates, values) {
       // catchers are the positions of data instances that satisfy each predicate
       let results = predicates.map(predicate => {
-        return values.filter(sv => predicate.app(sv.val))
+        return values.filter(sv => runtime.getField(predicate, "f").app(sv.val))
                      .map(sv => sv.pos);
       });
       console.log("predicate results:", results);
@@ -189,7 +189,8 @@
         (acc, catchers) => acc + Number(catchers.length > 0), 0);
       console.log(numSatisfied + " predicate(s) satisfied");
 
-      function renderPredicate(catchers) {
+      function renderPredicate(catchers, hint) {
+        console.log(hint);
         let predicate = document.createElement('a');
         predicate.setAttribute('href', '#');
         predicate.classList.add('predicate');
@@ -225,7 +226,8 @@
       let predicate_list = document.createElement('ul');
       predicate_list.classList.add('predicate_list');
 
-      results.map(renderPredicate)
+      let hints = predicates.map(pred => runtime.getField(pred, "hint"));
+      results.map((catchers, i) => renderPredicate(catchers, hints[i]))
         .forEach(function (predicate_widget) {
           let li = document.createElement('li');
           li.appendChild(predicate_widget);
@@ -335,7 +337,7 @@
                       let defined = rr.getField(rr.modules[predicateModuleName], "defined-values");
                       console.log("Grabbing predicates...");
                       let predicates = Object.values(defined).filter(
-                        val => rr.isFunction(val) && !val.name.startsWith("ignore"));
+                        val => val.__proto__.$name === "pred-generic");
                       console.log("Found predicates:", predicates);
 
                       return rr.safeCall(function() {
