@@ -34,7 +34,7 @@
     var ffi = runtime.ffi;
 
     var output = jQuery("<div id='output' class='cm-s-default'>");
-    output.append($("<p class='predicate_info'>Playground will todo<p>"));
+    output.append($("<p class='predicate_info'>Playground will check your examples against a suite of instructor-written predicates that look for interesting cases.<p>"));
     
     var outputPending = jQuery("<span>").text("Gathering results...");
     var outputPendingHidden = true;
@@ -163,10 +163,12 @@
 
     // This predicate rendering system is based on examplar's predicate rendering
     // (https://github.com/brownplt/examplar)
-    function renderPredicateResults(predicates) {
+    function renderPredicateResults(predicates, values) {
       let results = predicates.map(predicate => {
         // catchers are the positions of data instances that satisfy the predicate
-        let catchers = studentValues.filter(sv => predicate.app(sv.val)).map(sv => sv.pos);
+        let catchers = values
+          .filter(sv => predicate.app(sv.val))
+          .map(sv => sv.pos);
         return {
           // TODO: figure out better identifier for predicate (way to get name?)
           predicate: predicate,
@@ -315,18 +317,22 @@
                 // I think that's correct.
                 return callingRuntime.pauseStack(function(restarter) {
                   rr.runThunk(function() {
+                    let values = studentValues;
+                    studentValues = [];
+                    statusWidget.predicateGraph.value = {};
                     var runResult = rr.getField(loadLib, "internal").getModuleResultResult(v);
                     console.log("Time to run compiled program:", JSON.stringify(runResult.stats));
                     if(rr.isSuccessResult(runResult)) {
+                      console.log("Assignment ID:", window.assignmentID);
                       let predicateModuleName = Object.keys(rr.modules).find(key => key.endsWith(window.assignmentID));
                       let defined = rr.getField(rr.modules[predicateModuleName], "defined-values");
-                      let predicates = Object.values(defined).filter(rr.isFunction);
+                      console.log("Grabbing predicates...");
+                      let predicates = Object.values(defined).filter(
+                        val => rr.isFunction(val) && !val.name.startsWith("ignore"));
+                      console.log("Found predicates:", predicates);
 
                       return rr.safeCall(function() {
-                        renderPredicateResults(predicates);
-                        studentValues = [];
-                        return checkUI.drawCheckResults(output, CPO.documents, rr,
-                                                        runtime.getField(runResult.result, "checks"), v);
+                        return renderPredicateResults(predicates, values);
                       }, function(_) {
                         outputPending.remove();
                         outputPendingHidden = true;
@@ -339,8 +345,17 @@
                       return renderAndDisplayError(resultRuntime, runResult.exn.exn,
                                                    runResult.exn.pyretStack, true, runResult);
                     }
-                  }, function(_) {
-                    restarter.resume(callingRuntime.nothing);
+                  }, function(runResult) {
+                    if (rr.isFailureResult(runResult)) {
+                      rr.runThunk(function() {
+                        return renderAndDisplayError(resultRuntime, runResult.exn.exn,
+                                                     runResult.exn.pyretStack, true, runResult, "compile-error");
+                      }, function(_) {
+                        restarter.resume(callingRuntime.nothing);
+                      });
+                    } else {
+                      restarter.resume(callingRuntime.nothing);
+                    }
                   });
                 });
               }
