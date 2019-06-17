@@ -164,29 +164,36 @@
     // This predicate rendering system is based on examplar's predicate rendering
     // (https://github.com/brownplt/examplar)
     function renderPredicateResults(predicates, values) {
+      // catchers are the positions of data instances that satisfy each predicate
       let results = predicates.map(predicate => {
-        // catchers are the positions of data instances that satisfy the predicate
-        let catchers = values
-          .filter(sv => predicate.app(sv.val))
-          .map(sv => sv.pos);
-        return {
-          // TODO: figure out better identifier for predicate (way to get name?)
-          predicate: predicate,
-          catchers: catchers
-        }
+        return values.filter(sv => predicate.app(sv.val))
+                     .map(sv => sv.pos);
       });
       console.log("predicate results:", results);
 
+      fetch("https://us-central1-data-druid-brown.cloudfunctions.net/playground_logger", {
+        method: 'PUT',
+        body: JSON.stringify({
+          student_email: $("#username").text(),
+          assignment_id: window.assignmentID,
+          submission: CPO.documents.get("definitions://").getValue(),
+          results: results.map(catchers => catchers.map(pos => pos.toString()))
+        }),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
       let numPredicates = predicates.length;
       let numSatisfied = results.reduce(
-        (acc, res) => acc + Number(res.catchers.length > 0), 0);
+        (acc, catchers) => acc + Number(catchers.length > 0), 0);
       console.log(numSatisfied + " predicate(s) satisfied");
 
       function renderPredicate(catchers) {
         let predicate = document.createElement('a');
         predicate.setAttribute('href', '#');
         predicate.classList.add('predicate');
-        predicate.textContent = '🐛';
+        predicate.textContent = '💡';
 
         if (catchers.length > 0) predicate.classList.add('satisfied');
 
@@ -218,7 +225,7 @@
       let predicate_list = document.createElement('ul');
       predicate_list.classList.add('predicate_list');
 
-      results.map(result => renderPredicate(result.catchers))
+      results.map(renderPredicate)
         .forEach(function (predicate_widget) {
           let li = document.createElement('li');
           li.appendChild(predicate_widget);
