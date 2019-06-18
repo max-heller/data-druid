@@ -542,8 +542,8 @@ $(function() {
 
   $("#save").click(saveEvent);
 
-  // shareAPI.makeHoverMenu($("#filemenu"), $("#filemenuContents"), false, function(){});
-  // shareAPI.makeHoverMenu($("#bonniemenu"), $("#bonniemenuContents"), false, function(){});
+  shareAPI.makeHoverMenu($("#filemenu"), $("#filemenuContents"), false, function(){});
+  shareAPI.makeHoverMenu($("#bonniemenu"), $("#bonniemenuContents"), false, function(){});
 
   var codeContainer = $("<div>").addClass("replMain");
   $("#main").prepend(codeContainer);
