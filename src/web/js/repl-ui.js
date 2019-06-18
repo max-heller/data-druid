@@ -41,6 +41,8 @@
     var canShowRunningIndicator = false;
     var running = false;
 
+    // graph widget for playground results
+    // (taken from Examplar)
     class Graph {
       constructor(value) {
         let xmlns = "http://www.w3.org/2000/svg";
@@ -117,8 +119,13 @@
 
     var RUNNING_SPINWHEEL_DELAY_MS = 1000;
 
+    // Student data instances from definitions pane
     let studentValues = [];
+
+    // Number of predicates satistifed on last run
     var lastSubmissionSatisfied = 0;
+
+    // Number of attempts with no or negative change in number of predicates satisfied
     var stagnatedAttempts = 0;
 
     function merge(obj, extension) {
@@ -165,14 +172,20 @@
 
     // This predicate rendering system is based on examplar's predicate rendering
     // (https://github.com/brownplt/examplar)
+    /**
+     * Generates results pane.
+     * @param {PObject[]} predicates List of predicate Pyret objects
+     * @param {PObject[]} values List of student values
+     * @param {string} generalHint General hint for the assignment ("" if not found)
+     */
     function renderPredicateResults(predicates, values, generalHint) {
-      // catchers are the positions of data instances that satisfy each predicate
+      // results holds the positions of data instances that satisfy each predicate
       let results = predicates.map(predicate => {
         return values.filter(sv => runtime.getField(predicate, "f").app(sv.val))
                      .map(sv => sv.pos);
       });
-      console.log("predicate results:", results);
 
+      // logging
       fetch("https://us-central1-data-druid-brown.cloudfunctions.net/playground_logger", {
         method: 'PUT',
         body: JSON.stringify({
@@ -195,16 +208,16 @@
       let numPredicates = predicates.length;
       let numSatisfied = results.reduce(
         (acc, catchers) => acc + Number(catchers.length > 0), 0);
-      console.log(numSatisfied + " predicate(s) satisfied");
 
+      // Increment stagnatedAttempts if numSatisfied did not increase
       if (numSatisfied <= lastSubmissionSatisfied) {
         stagnatedAttempts++;
       } else {
         stagnatedAttempts = 0;
       }
-      console.log("Stagnated attempts: ", stagnatedAttempts);
       lastSubmissionSatisfied = numSatisfied;
 
+      // Set widget graph
       statusWidget.predicateGraph.value = {
         numerator: numSatisfied, denominator: numPredicates
       };
@@ -214,6 +227,7 @@
 
       let intro = document.createElement('p');
       // TODO: change to a more appropriate message
+      // E.g., "You found X of the Y interesting cases."
       intro.textContent = `You satisfied ${numSatisfied} out of ${numPredicates} predicates:`;
       predicateInfo.appendChild(intro);
 
@@ -224,21 +238,26 @@
       let hintBox = document.createElement('p');
       hintBox.id = 'hint_box';
       hintBox.style.display = 'none';
-      predicateListContainer.appendChild(predicateList);
-      predicateListContainer.appendChild(hintBox);
+      predicateListContainer.append(predicateList, hintBox);
 
       // Check if student is eligible for predicate-specific hint
       let hintAvailable = 
         (numSatisfied === numPredicates - 1) && 
         (stagnatedAttempts >= 3);
 
+      /**
+       * Create a circle icon for the given predicate.
+       * @param {*} catchers List of srcloc each representing the satisfying student example 
+       * @param {string} hint Predicate-specific hint 
+       */
       function renderPredicate(catchers, hint) {
-        console.log(hint);
+
         let predicate = document.createElement('a');
         predicate.setAttribute('href', '#');
         predicate.classList.add('predicate');
         predicate.textContent = '💡';
 
+        // Add hint if predicate is unsatisfied AND hintAvailable is true
         if (catchers.length > 0) {
           predicate.classList.add('satisfied');
         } else if (hintAvailable) {
@@ -272,6 +291,7 @@
         return predicate;
       }
 
+      // Generate predicate circle icons
       let hints = predicates.map(pred => runtime.getField(pred, "hint"));
       results.map((catchers, i) => renderPredicate(catchers, hints[i]))
         .forEach(function (predicate_widget) {
@@ -287,6 +307,7 @@
       outro.textContent = "The predicates you satisfied are highlighted above in blue. Mouseover a predicate to see which of your examples satisfied it.";
       predicateInfo.appendChild(outro);
       
+      // If hintAvailable, display hint tip
       if (hintAvailable) {
         let hintNotice = document.createElement("p");
         hintNotice.textContent = "If you're feeling stuck, you can click on an unsatisfied predicate for a hint!";
@@ -299,7 +320,7 @@
       if (!hintAvailable && 
           (generalHint !== "") &&
           (stagnatedAttempts > 5)) {
-
+        // Create div containing generalHintButton
         let generalHintDiv = document.createElement('div');
         generalHintDiv.id = "general_hint_container";
 
@@ -317,6 +338,7 @@
             generalHintButton.innerText = "Hide Hint";
             generalHintText.style.display = "block";
           } else {
+            // hide hint
             generalHintButton.innerText = "Show Hint";
             generalHintText.style.display = "none";
           }
@@ -409,20 +431,22 @@
                 // I think that's correct.
                 return callingRuntime.pauseStack(function(restarter) {
                   rr.runThunk(function() {
+                    // Clean studentValues & prediateGraph before running predicates
                     let values = studentValues;
                     studentValues = [];
                     statusWidget.predicateGraph.value = {};
                     var runResult = rr.getField(loadLib, "internal").getModuleResultResult(v);
                     console.log("Time to run compiled program:", JSON.stringify(runResult.stats));
                     if(rr.isSuccessResult(runResult)) {
-                      console.log("Assignment ID:", window.assignmentID);
+                      // On successful compilation
+
+                      // Grab predicates from import file (uses window.assignmentID)
                       let predicateModuleName = Object.keys(rr.modules).find(key => key.endsWith(window.assignmentID));
                       let defined = rr.getField(rr.modules[predicateModuleName], "defined-values");
-                      console.log("Grabbing predicates...");
                       let predicates = Object.values(defined).filter(
                         val => val.__proto__.$name === "pred-generic");
-                      console.log("Found predicates:", predicates);
-                      // grab general hint from import OR default empty string
+
+                      // Grab general hint from import OR default to empty string
                       let hint = defined["general-hint"] || "";
 
                       return rr.safeCall(function() {
