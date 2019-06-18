@@ -118,6 +118,8 @@
     var RUNNING_SPINWHEEL_DELAY_MS = 1000;
 
     let studentValues = [];
+    var lastSubmissionSatisfied = 0;
+    var stagnatedAttempts = 0;
 
     function merge(obj, extension) {
       var newobj = {};
@@ -177,7 +179,13 @@
           student_email: $("#username").text(),
           assignment_id: window.assignmentID,
           submission: CPO.documents.get("definitions://").getValue(),
-          results: results.map(catchers => catchers.map(pos => pos.toString()))
+          results: JSON.stringify(results.map(
+            catchers => catchers.map(pos => {
+              return {
+                top_ln: pos.from.line,
+                bot_ln: pos.to.line
+              }
+            })))
         }),
         headers: {
           'Content-Type': 'application/json'
@@ -189,27 +197,13 @@
         (acc, catchers) => acc + Number(catchers.length > 0), 0);
       console.log(numSatisfied + " predicate(s) satisfied");
 
-      function renderPredicate(catchers, hint) {
-        console.log(hint);
-        let predicate = document.createElement('a');
-        predicate.setAttribute('href', '#');
-        predicate.classList.add('predicate');
-        predicate.textContent = '💡';
-
-        if (catchers.length > 0) predicate.classList.add('satisfied');
-
-        predicate.addEventListener('click', e => e.preventDefault());
-
-        // Highlight on hover, remove highlight on focus loss
-        predicate.addEventListener('mouseenter', function () {
-          catchers.forEach(loc => loc.highlight('#91ccec'));
-        });
-        predicate.addEventListener('mouseleave', function () {
-          catchers.forEach(loc => loc.highlight(''));
-        });
-
-        return predicate;
+      if (numSatisfied <= lastSubmissionSatisfied) {
+        stagnatedAttempts++;
+      } else {
+        stagnatedAttempts = 0;
       }
+      console.log("Stagnated attempts: ", stagnatedAttempts);
+      lastSubmissionSatisfied = numSatisfied;
 
       statusWidget.predicateGraph.value = {
         numerator: numSatisfied, denominator: numPredicates
@@ -223,18 +217,66 @@
       intro.textContent = `You satisfied ${numSatisfied} out of ${numPredicates} predicates:`;
       predicateInfo.appendChild(intro);
 
-      let predicate_list = document.createElement('ul');
-      predicate_list.classList.add('predicate_list');
+      let predicateListContainer = document.createElement('div');
+      predicateListContainer.id = 'predicate_list_container';
+      let predicateList = document.createElement('ul');
+      predicateList.classList.add('predicate_list');
+      let hintBox = document.createElement('p');
+      hintBox.id = 'hint_box';
+      hintBox.setAttribute('display', 'none');
+      predicateListContainer.appendChild(predicateList);
+      predicateListContainer.appendChild(hintBox);
+
+      function renderPredicate(catchers, hint) {
+        console.log(hint);
+        let predicate = document.createElement('a');
+        predicate.setAttribute('href', '#');
+        predicate.classList.add('predicate');
+        predicate.textContent = '💡';
+
+        if (catchers.length > 0) {
+          predicate.classList.add('satisfied');
+        } else if ((numSatisfied === numPredicates - 1) &&
+                   (stagnatedAttempts >= 3)) {
+          predicate.addEventListener('click', e => {
+            if (predicate.classList.toggle('hinted')) {
+              // Class was added, display hint
+              hintBox.textContent = "Hint: " + hint;
+              hintBox.setAttribute('display', 'block');
+            } else {
+              // Class was removed, hide hint
+              hintBox.setAttribute('display', 'none');
+              hintBox.textContent = "";
+            }
+          });
+          predicate.classList.add('hintable');
+          predicate.title = "Click for a hint!";
+        }
+
+        predicate.addEventListener('click', e => {
+          e.preventDefault();
+        });
+
+        // Highlight on hover, remove highlight on focus loss
+        predicate.addEventListener('mouseenter', function () {
+          catchers.forEach(loc => loc.highlight('#91ccec'));
+        });
+        predicate.addEventListener('mouseleave', function () {
+          catchers.forEach(loc => loc.highlight(''));
+        });
+
+        return predicate;
+      }
 
       let hints = predicates.map(pred => runtime.getField(pred, "hint"));
       results.map((catchers, i) => renderPredicate(catchers, hints[i]))
         .forEach(function (predicate_widget) {
           let li = document.createElement('li');
           li.appendChild(predicate_widget);
-          predicate_list.appendChild(li);
+          predicateList.appendChild(li);
         });
 
-      predicateInfo.appendChild(predicate_list);
+      predicateInfo.appendChild(predicateListContainer);
 
       let outro = document.createElement('p');
       // TODO: change to something more appropriate
