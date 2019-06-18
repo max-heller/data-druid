@@ -165,7 +165,7 @@
 
     // This predicate rendering system is based on examplar's predicate rendering
     // (https://github.com/brownplt/examplar)
-    function renderPredicateResults(predicates, values) {
+    function renderPredicateResults(predicates, values, generalHint) {
       // catchers are the positions of data instances that satisfy each predicate
       let results = predicates.map(predicate => {
         return values.filter(sv => runtime.getField(predicate, "f").app(sv.val))
@@ -223,9 +223,14 @@
       predicateList.classList.add('predicate_list');
       let hintBox = document.createElement('p');
       hintBox.id = 'hint_box';
-      hintBox.setAttribute('display', 'none');
+      hintBox.style.display = 'none';
       predicateListContainer.appendChild(predicateList);
       predicateListContainer.appendChild(hintBox);
+
+      // Check if student is eligible for predicate-specific hint
+      let hintAvailable = 
+        (numSatisfied === numPredicates - 1) && 
+        (stagnatedAttempts >= 3);
 
       function renderPredicate(catchers, hint) {
         console.log(hint);
@@ -236,16 +241,15 @@
 
         if (catchers.length > 0) {
           predicate.classList.add('satisfied');
-        } else if ((numSatisfied === numPredicates - 1) &&
-                   (stagnatedAttempts >= 3)) {
+        } else if (hintAvailable) {
           predicate.addEventListener('click', e => {
             if (predicate.classList.toggle('hinted')) {
               // Class was added, display hint
               hintBox.textContent = "Hint: " + hint;
-              hintBox.setAttribute('display', 'block');
+              hintBox.style.display = 'block';
             } else {
               // Class was removed, hide hint
-              hintBox.setAttribute('display', 'none');
+              hintBox.style.display = 'none';
               hintBox.textContent = "";
             }
           });
@@ -282,8 +286,45 @@
       // TODO: change to something more appropriate
       outro.textContent = "The predicates you satisfied are highlighted above in blue. Mouseover a predicate to see which of your examples satisfied it.";
       predicateInfo.appendChild(outro);
+      
+      if (hintAvailable) {
+        let hintNotice = document.createElement("p");
+        hintNotice.textContent = "If you're feeling stuck, you can click on an unsatisfied predicate for a hint!";
+        predicateInfo.appendChild(hintNotice);
+      }
 
       output.append(predicateInfo);
+
+      // Append general hint button in stagnating scenario
+      if (!hintAvailable && 
+          (generalHint !== "") &&
+          (stagnatedAttempts > 5)) {
+
+        let generalHintDiv = document.createElement('div');
+        generalHintDiv.id = "general_hint_container";
+
+        let generalHintText = document.createElement('p');
+        generalHintText.id = "general_hint_text"; 
+        generalHintText.style.display = "none";
+        generalHintText.textContent = generalHint;
+
+        let generalHintButton = document.createElement('button');
+        generalHintButton.id = "general_hint_button";
+        generalHintButton.innerHTML = "Show Hint";
+        generalHintButton.addEventListener("click", e => {
+          if (generalHintText.style.display === "none") {
+            // view hint
+            generalHintButton.innerText = "Hide Hint";
+            generalHintText.style.display = "block";
+          } else {
+            generalHintButton.innerText = "Show Hint";
+            generalHintText.style.display = "none";
+          }
+        });
+
+        generalHintDiv.appendChild(generalHintButton);
+        predicateInfo.append(generalHintDiv, generalHintText);
+      }
 
       if (numSatisfied === numPredicates) {
         let reminder = document.createElement('p');
@@ -381,9 +422,11 @@
                       let predicates = Object.values(defined).filter(
                         val => val.__proto__.$name === "pred-generic");
                       console.log("Found predicates:", predicates);
+                      // grab general hint from import OR default empty string
+                      let hint = defined["general-hint"] || "";
 
                       return rr.safeCall(function() {
-                        return renderPredicateResults(predicates, values);
+                        return renderPredicateResults(predicates, values, hint);
                       }, function(_) {
                         outputPending.remove();
                         outputPendingHidden = true;
