@@ -195,6 +195,11 @@ em {
   box-shadow: 0px 1px 2px rgba(0,0,0,0.6);
 }
 
+nav > div {
+  width: 100%;
+  height: 100%;
+}
+/*
 #header div a {
   width: 100px;
   margin-top: 15px;
@@ -206,6 +211,112 @@ em {
   color: #111;
   font-family: sans-serif;
 }
+*/
+
+nav {
+  /* height: 100%; */
+  padding: 0;
+  margin: 0;
+}
+
+/*
+nav:hover {
+  border-left: thin solid red;
+}
+*/
+
+nav ul a, nav ul button {
+  /* width: 100px; */
+  /* margin-top: 15px; */
+  float: left;
+  padding-right: 2em;
+}
+
+nav a, nav button {
+  color: #111;
+  font-family: sans-serif;
+}
+
+nav > div > ul {
+  display: flex;
+  flex-flow: row wrap;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: #0060ce;
+  list-style-type: none;
+}
+
+nav > div > ul > li {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  position: relative;
+ /* border: thin solid green; */
+  list-style-type: none;
+}
+
+nav > div > ul > li  ul {
+  position: absolute;
+  top: 2.5em;
+  margin: 0;
+  padding: 0;
+  /* aria-hidden: true; */
+  display: none;
+  list-style-type: none;
+}
+
+nav > div > ul > li > ul:not([id="run-dropdown-content"]) {
+  left: 0;
+}
+
+nav > div > ul > li > ul[id="run-dropdown-content"] {
+  left: -150px;
+}
+
+nav > div > ul > li:focus ul {
+  /* aria-hidden: false; */
+  display: block;
+}
+
+nav > div > ul ul > li {
+  /* height: 20px; */
+  float: none;
+  position: static;
+  margin: 0;
+  padding: 0;
+  /* border: thin solid blue; */
+  overflow: hidden;
+  list-style-type: none;
+}
+
+ul[role="menu"] > li {
+  padding: 0;
+}
+
+nav > div > ul ul > li > div {
+  margin: 0;
+  padding: 0;
+  /* border: thin solid cyan; */
+  overflow: hidden;
+}
+
+.menuitemtitle > button {
+  padding-left: 1em;
+  padding-right: 1em;
+}
+
+.menuButton {
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+nav > div > ul ul a, nav > div > ul ul button {
+  float: none;
+  display: block;
+  overflow: hidden;
+}
 
 #logo{
   height:100%;
@@ -214,6 +325,10 @@ em {
   display:block;
   float:left;
   width: 60px;
+}
+
+li.topTier > div {
+  float: none;
 }
 
 .logo{
@@ -225,7 +340,7 @@ em {
 }
 
 .menu {
-  display: inline-block;
+  display: block;
   height: 100%;
   vertical-align: top;
   float:left;
@@ -278,6 +393,10 @@ em {
     color: rgba(0, 0, 0, 0.26);
     cursor: default;
     box-shadow: none;
+}
+
+.lhs {
+  float: left;
 }
 
 .rhs {
@@ -356,8 +475,50 @@ code {
   padding-left: 3px;
 }
 
+.flexpushright { /* used for the first flex item that's pushed right */
+  margin-left: auto;
+}
+
 #run-dropdown-content sup {
   font-size: 65%;
   top: -.15em;
   vertical-align: top;
+}
+
+.showmenu {
+  display: block;
+}
+
+.focusable {
+  margin: 0;
+  padding: 0;
+}
+
+.focusable:focus {
+  background: rgba(0,0,0,0.3);
+}
+
+.tooltip {
+  position: relative;
+}
+
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 120px;
+  background-color: #555;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px 0;
+  position: absolute;
+  z-index: 1;
+  top: 5ex;
+  left: 5ex;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
 }
