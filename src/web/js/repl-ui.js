@@ -178,15 +178,25 @@
      * @param {PObject[]} instances Student-written data instances
      */
     function renderPredicateResults(defined, instances) {
-      // Grab predicates and type checker
+      // Grab predicates from instructor file
       let predicates = Object.values(defined).filter(
         val => val.__proto__.$name === "pred");
+      let undefinedComponents = (predicates.length === 0) ? ["predicates"] : [];
+        
+      // Grab type checker, general hint, and hint eligibility checkers
       let typeChecker = defined["type-checker"];
-
-      // Grab general hint and hint eligibility checkers
-      let generalHint = defined["general-hint"] || "";
+      if (!typeChecker) undefinedComponents.push("data instance type checker");
+      let generalHint = defined["general-hint"];
+      if (!generalHint) undefinedComponents.push("general hint");
       let isGeneralHintEligible = defined["is-general-hint-eligible"];
+      if (!isGeneralHintEligible) undefinedComponents.push("general hint eligibility checker");
       let isSpecificHintEligible = defined["is-specific-hint-eligible"];
+      if (!isSpecificHintEligible) undefinedComponents.push("specific hint eligibility checker");
+
+      if (undefinedComponents.length > 0) {
+        alert(`One or more required components are missing from the assignment file: ${undefinedComponents.join(', ')}. Please contact your instructor.`);
+        return;
+      }
 
       // Split data instances into those that do and don't pass the assignment's type checker
       // TODO: optimize using a reduce that produces two arrays
