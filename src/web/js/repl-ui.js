@@ -120,7 +120,7 @@
     var RUNNING_SPINWHEEL_DELAY_MS = 1000;
 
     // Student data instances from definitions pane
-    let studentValues = [];
+    let studentInstances = [];
 
     // Number of predicates satistifed on last run
     var lastSubmissionSatisfied = 0;
@@ -174,17 +174,25 @@
     // (https://github.com/brownplt/examplar)
     /**
      * Generates results pane.
-     * @param {PFunction} typeChecker Function that determines if instances are in the problem space.
-     * @param {PObject[]} predicates List of predicate Pyret objects
-     * @param {PObject[]} values List of student values
-     * @param {string} generalHint General hint for the assignment ("" if not found)
+     * @param {Object} defined Instructor-defined values from assignment file
+     * @param {PObject[]} instances Student-written data instances
      */
-    function renderPredicateResults(typeChecker, predicates, values, generalHint) {
+    function renderPredicateResults(defined, instances) {
+      // Grab predicates and type checker
+      let predicates = Object.values(defined).filter(
+        val => val.__proto__.$name === "pred");
+      let typeChecker = defined["type-checker"];
+
+      // Grab general hint and hint eligibility checkers
+      let generalHint = defined["general-hint"] || "";
+      let isGeneralHintEligible = defined["is-general-hint-eligible"];
+      let isSpecificHintEligible = defined["is-specific-hint-eligible"];
+
       // Split data instances into those that do and don't pass the assignment's type checker
       // TODO: optimize using a reduce that produces two arrays
-      let validInstances = values.filter(sv => typeChecker.app(sv.val));
-      let invalidPositions = values.filter(sv => !typeChecker.app(sv.val))
-                                   .map(sv => sv.pos);
+      let validInstances = instances.filter(sv => typeChecker.app(sv.val));
+      let invalidPositions = instances.filter(sv => !typeChecker.app(sv.val))
+                                      .map(sv => sv.pos);
 
       // Find the positions of data instances that satisfy each predicate
       let results = predicates.map(predicate => {
@@ -262,9 +270,8 @@
         predicateListContainer.append(predicateList, hintBox);
   
         // Check if student is eligible for predicate-specific hint
-        let hintAvailable = 
-          (numSatisfied === numPredicates - 1) && 
-          (stagnatedAttempts >= 3);
+        let specificHintEligible =
+          isSpecificHintEligible.app(stagnatedAttempts, numPredicates, numSatisfied);
   
         /**
          * Create a circle icon for the given predicate.
@@ -278,10 +285,10 @@
           predicate.classList.add('predicate');
           predicate.textContent = '💡';
   
-          // Add hint if predicate is unsatisfied AND hintAvailable is true
+          // Add hint if predicate is unsatisfied AND student is eligible for the hint
           if (catchers.length > 0) {
             predicate.classList.add('satisfied');
-          } else if (hintAvailable) {
+          } else if (specificHintEligible) {
             predicate.addEventListener('click', e => {
               if (predicate.classList.toggle('hinted')) {
                 // Class was added, display hint
@@ -328,8 +335,8 @@
         outro.textContent = "The predicates you satisfied are highlighted above in blue. Mouseover a predicate to see which of your examples satisfied it.";
         predicateInfo.appendChild(outro);
         
-        // If hintAvailable, display hint tip
-        if (hintAvailable) {
+        // If student is eligible for a specific hint, display a hint tip
+        if (specificHintEligible) {
           let hintNotice = document.createElement("p");
           hintNotice.textContent = "If you're feeling stuck, you can click on an unsatisfied predicate for a hint!";
           predicateInfo.appendChild(hintNotice);
@@ -337,10 +344,9 @@
   
         output.append(predicateInfo);
   
-        // Append general hint button in stagnating scenario
-        if (!hintAvailable && 
-            (generalHint !== "") &&
-            (stagnatedAttempts > 5)) {
+        // Append general hint button if student is eligible for it AND is not for a general hint
+        if (!specificHintEligible &&
+            isGeneralHintEligible.app(stagnatedAttempts, numPredicates, numSatisfied)) {
           // Create div containing generalHintButton
           let generalHintDiv = document.createElement('div');
           generalHintDiv.id = "general_hint_container";
@@ -453,27 +459,21 @@
                 // I think that's correct.
                 return callingRuntime.pauseStack(function(restarter) {
                   rr.runThunk(function() {
-                    // Clean studentValues & prediateGraph before running predicates
-                    let values = studentValues;
-                    studentValues = [];
+                    // Clean studentInstances & prediateGraph before running predicates
+                    let instances = studentInstances;
+                    studentInstances = [];
                     statusWidget.predicateGraph.value = {};
                     var runResult = rr.getField(loadLib, "internal").getModuleResultResult(v);
                     console.log("Time to run compiled program:", JSON.stringify(runResult.stats));
                     if(rr.isSuccessResult(runResult)) {
                       // On successful compilation
 
-                      // Grab predicates and type checker from import file (uses window.assignmentID)
+                      // Find values defined in import file (written by instructor for each assignment)
                       let predicateModuleName = Object.keys(rr.modules).find(key => key.endsWith(window.assignmentID));
                       let defined = rr.getField(rr.modules[predicateModuleName], "defined-values");
-                      let predicates = Object.values(defined).filter(
-                        val => val.__proto__.$name === "pred");
-                      let typeChecker = defined["type-checker"];
-
-                      // Grab general hint from import OR default to empty string
-                      let generalHint = defined["general-hint"] || "";
 
                       return rr.safeCall(function() {
-                        return renderPredicateResults(typeChecker, predicates, values, generalHint);
+                        return renderPredicateResults(defined, instances);
                       }, function(_) {
                         outputPending.remove();
                         outputPendingHidden = true;
@@ -846,8 +846,7 @@
           }, function(container) {
             if (repl.runtime.isSuccessResult(container)) {
               let pos = outputUI.Position.fromSrcArray(loc, CPO.documents, {});
-              studentValues.push({val: val, pos: pos});
-              console.log("student values:", studentValues);
+              studentInstances.push({val: val, pos: pos});
             } else {
               $(output).append($("<div>").addClass("error trace")
                                .append($("<span>").addClass("trace").text("Trace #" + (++replOutputCount)))
