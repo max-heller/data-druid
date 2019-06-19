@@ -290,6 +290,12 @@
             predicate.classList.add('satisfied');
           } else if (specificHintEligible) {
             predicate.addEventListener('click', e => {
+              // Remove hinted class from other predicates
+              predicateList.querySelectorAll('.hintable').forEach(pred => {
+                if (pred !== predicate) pred.classList.remove('hinted');
+              });
+
+              // Display/hide hint
               if (predicate.classList.toggle('hinted')) {
                 // Class was added, display hint
                 hintBox.textContent = "Hint: " + hint;
