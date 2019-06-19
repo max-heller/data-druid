@@ -174,16 +174,30 @@
     // (https://github.com/brownplt/examplar)
     /**
      * Generates results pane.
+     * @param {PFunction} typeChecker Function that determines if instances are in the problem space.
      * @param {PObject[]} predicates List of predicate Pyret objects
      * @param {PObject[]} values List of student values
      * @param {string} generalHint General hint for the assignment ("" if not found)
      */
-    function renderPredicateResults(predicates, values, generalHint) {
-      // results holds the positions of data instances that satisfy each predicate
+    function renderPredicateResults(typeChecker, predicates, values, generalHint) {
+      // Split data instances into those that do and don't pass the assignment's type checker
+      // TODO: optimize using a reduce that produces two arrays
+      let validInstances = values.filter(sv => typeChecker.app(sv.val));
+      let invalidPositions = values.filter(sv => !typeChecker.app(sv.val))
+                                   .map(sv => sv.pos);
+
+      // Find the positions of data instances that satisfy each predicate
       let results = predicates.map(predicate => {
-        return values.filter(sv => runtime.getField(predicate, "f").app(sv.val))
-                     .map(sv => sv.pos);
+        return validInstances.filter(sv => runtime.getField(predicate, "f").app(sv.val))
+                    .map(sv => sv.pos);
       });
+
+      function posToLineNumbers(pos) {
+        return {
+          top_ln: pos.from.line,
+          bot_ln: pos.to.line
+        }
+      }
 
       // logging
       fetch("https://us-central1-data-druid-brown.cloudfunctions.net/playground_logger", {
@@ -192,13 +206,10 @@
           student_email: $("#username").text(),
           assignment_id: window.assignmentID,
           submission: CPO.documents.get("definitions://").getValue(),
+          invalid: JSON.stringify(invalidPositions.map(posToLineNumbers)),
           results: JSON.stringify(results.map(
-            catchers => catchers.map(pos => {
-              return {
-                top_ln: pos.from.line,
-                bot_ln: pos.to.line
-              }
-            })))
+            catchers => catchers.map(posToLineNumbers)
+          ))
         }),
         headers: {
           'Content-Type': 'application/json'
@@ -206,8 +217,7 @@
       });
 
       let numPredicates = predicates.length;
-      let numSatisfied = results.reduce(
-        (acc, catchers) => acc + Number(catchers.length > 0), 0);
+      let numSatisfied = results.filter(catchers => catchers.length > 0).length;
 
       // Increment stagnatedAttempts if numSatisfied did not increase
       if (numSatisfied <= lastSubmissionSatisfied) {
@@ -217,142 +227,154 @@
       }
       lastSubmissionSatisfied = numSatisfied;
 
-      // Set widget graph
-      statusWidget.predicateGraph.value = {
-        numerator: numSatisfied, denominator: numPredicates
-      };
+      if (invalidPositions.length > 0) {
+        // Set widget graph to question mark
+        statusWidget.predicateGraph.value = {};
 
-      let predicateInfo = document.createElement('div');
-      predicateInfo.classList.add('predicate_info');
+        // Highlight offending instances
+        invalidPositions.forEach(pos => pos.highlight('#ffac48'));
 
-      let intro = document.createElement('p');
-      // TODO: change to a more appropriate message
-      // E.g., "You found X of the Y interesting cases."
-      intro.textContent = `You satisfied ${numSatisfied} out of ${numPredicates} predicates:`;
-      predicateInfo.appendChild(intro);
-
-      let predicateListContainer = document.createElement('div');
-      predicateListContainer.id = 'predicate_list_container';
-      let predicateList = document.createElement('ul');
-      predicateList.classList.add('predicate_list');
-      let hintBox = document.createElement('p');
-      hintBox.id = 'hint_box';
-      hintBox.style.display = 'none';
-      predicateListContainer.append(predicateList, hintBox);
-
-      // Check if student is eligible for predicate-specific hint
-      let hintAvailable = 
-        (numSatisfied === numPredicates - 1) && 
-        (stagnatedAttempts >= 3);
-
-      /**
-       * Create a circle icon for the given predicate.
-       * @param {*} catchers List of srcloc each representing the satisfying student example 
-       * @param {string} hint Predicate-specific hint 
-       */
-      function renderPredicate(catchers, hint) {
-
-        let predicate = document.createElement('a');
-        predicate.setAttribute('href', '#');
-        predicate.classList.add('predicate');
-        predicate.textContent = '💡';
-
-        // Add hint if predicate is unsatisfied AND hintAvailable is true
-        if (catchers.length > 0) {
-          predicate.classList.add('satisfied');
-        } else if (hintAvailable) {
+        let message = document.createElement('p');
+        message.textContent = "The highlighted data examples did not fit the problem specifications. If you're unsure as to why, take another look at the assignment's data definition.";
+        output.append(message);
+      } else {
+        // Set widget graph
+        statusWidget.predicateGraph.value = {
+          numerator: numSatisfied, denominator: numPredicates
+        };
+  
+        let predicateInfo = document.createElement('div');
+        predicateInfo.classList.add('predicate_info');
+  
+        let intro = document.createElement('p');
+        // TODO: change to a more appropriate message
+        // E.g., "You found X of the Y interesting cases."
+        intro.textContent = `You satisfied ${numSatisfied} out of ${numPredicates} predicates:`;
+        predicateInfo.appendChild(intro);
+  
+        let predicateListContainer = document.createElement('div');
+        predicateListContainer.id = 'predicate_list_container';
+        let predicateList = document.createElement('ul');
+        predicateList.classList.add('predicate_list');
+        let hintBox = document.createElement('p');
+        hintBox.id = 'hint_box';
+        hintBox.style.display = 'none';
+        predicateListContainer.append(predicateList, hintBox);
+  
+        // Check if student is eligible for predicate-specific hint
+        let hintAvailable = 
+          (numSatisfied === numPredicates - 1) && 
+          (stagnatedAttempts >= 3);
+  
+        /**
+         * Create a circle icon for the given predicate.
+         * @param {*} catchers List of srcloc each representing the satisfying student example 
+         * @param {string} hint Predicate-specific hint 
+         */
+        function renderPredicate(catchers, hint) {
+  
+          let predicate = document.createElement('a');
+          predicate.setAttribute('href', '#');
+          predicate.classList.add('predicate');
+          predicate.textContent = '💡';
+  
+          // Add hint if predicate is unsatisfied AND hintAvailable is true
+          if (catchers.length > 0) {
+            predicate.classList.add('satisfied');
+          } else if (hintAvailable) {
+            predicate.addEventListener('click', e => {
+              if (predicate.classList.toggle('hinted')) {
+                // Class was added, display hint
+                hintBox.textContent = "Hint: " + hint;
+                hintBox.style.display = 'block';
+              } else {
+                // Class was removed, hide hint
+                hintBox.style.display = 'none';
+                hintBox.textContent = "";
+              }
+            });
+            predicate.classList.add('hintable');
+            predicate.title = "Click for a hint!";
+          }
+  
           predicate.addEventListener('click', e => {
-            if (predicate.classList.toggle('hinted')) {
-              // Class was added, display hint
-              hintBox.textContent = "Hint: " + hint;
-              hintBox.style.display = 'block';
+            e.preventDefault();
+          });
+  
+          // Highlight on hover, remove highlight on focus loss
+          predicate.addEventListener('mouseenter', function () {
+            catchers.forEach(loc => loc.highlight('#91ccec'));
+          });
+          predicate.addEventListener('mouseleave', function () {
+            catchers.forEach(loc => loc.highlight(''));
+          });
+  
+          return predicate;
+        }
+  
+        // Generate predicate circle icons
+        let hints = predicates.map(pred => runtime.getField(pred, "hint"));
+        results.map((catchers, i) => renderPredicate(catchers, hints[i]))
+          .forEach(function (predicate_widget) {
+            let li = document.createElement('li');
+            li.appendChild(predicate_widget);
+            predicateList.appendChild(li);
+          });
+  
+        predicateInfo.appendChild(predicateListContainer);
+  
+        let outro = document.createElement('p');
+        // TODO: change to something more appropriate
+        outro.textContent = "The predicates you satisfied are highlighted above in blue. Mouseover a predicate to see which of your examples satisfied it.";
+        predicateInfo.appendChild(outro);
+        
+        // If hintAvailable, display hint tip
+        if (hintAvailable) {
+          let hintNotice = document.createElement("p");
+          hintNotice.textContent = "If you're feeling stuck, you can click on an unsatisfied predicate for a hint!";
+          predicateInfo.appendChild(hintNotice);
+        }
+  
+        output.append(predicateInfo);
+  
+        // Append general hint button in stagnating scenario
+        if (!hintAvailable && 
+            (generalHint !== "") &&
+            (stagnatedAttempts > 5)) {
+          // Create div containing generalHintButton
+          let generalHintDiv = document.createElement('div');
+          generalHintDiv.id = "general_hint_container";
+  
+          let generalHintText = document.createElement('p');
+          generalHintText.id = "general_hint_text"; 
+          generalHintText.style.display = "none";
+          generalHintText.textContent = generalHint;
+  
+          let generalHintButton = document.createElement('button');
+          generalHintButton.id = "general_hint_button";
+          generalHintButton.innerHTML = "Show Hint";
+          generalHintButton.addEventListener("click", e => {
+            if (generalHintText.style.display === "none") {
+              // view hint
+              generalHintButton.innerText = "Hide Hint";
+              generalHintText.style.display = "block";
             } else {
-              // Class was removed, hide hint
-              hintBox.style.display = 'none';
-              hintBox.textContent = "";
+              // hide hint
+              generalHintButton.innerText = "Show Hint";
+              generalHintText.style.display = "none";
             }
           });
-          predicate.classList.add('hintable');
-          predicate.title = "Click for a hint!";
+  
+          generalHintDiv.appendChild(generalHintButton);
+          predicateInfo.append(generalHintDiv, generalHintText);
         }
-
-        predicate.addEventListener('click', e => {
-          e.preventDefault();
-        });
-
-        // Highlight on hover, remove highlight on focus loss
-        predicate.addEventListener('mouseenter', function () {
-          catchers.forEach(loc => loc.highlight('#91ccec'));
-        });
-        predicate.addEventListener('mouseleave', function () {
-          catchers.forEach(loc => loc.highlight(''));
-        });
-
-        return predicate;
-      }
-
-      // Generate predicate circle icons
-      let hints = predicates.map(pred => runtime.getField(pred, "hint"));
-      results.map((catchers, i) => renderPredicate(catchers, hints[i]))
-        .forEach(function (predicate_widget) {
-          let li = document.createElement('li');
-          li.appendChild(predicate_widget);
-          predicateList.appendChild(li);
-        });
-
-      predicateInfo.appendChild(predicateListContainer);
-
-      let outro = document.createElement('p');
-      // TODO: change to something more appropriate
-      outro.textContent = "The predicates you satisfied are highlighted above in blue. Mouseover a predicate to see which of your examples satisfied it.";
-      predicateInfo.appendChild(outro);
-      
-      // If hintAvailable, display hint tip
-      if (hintAvailable) {
-        let hintNotice = document.createElement("p");
-        hintNotice.textContent = "If you're feeling stuck, you can click on an unsatisfied predicate for a hint!";
-        predicateInfo.appendChild(hintNotice);
-      }
-
-      output.append(predicateInfo);
-
-      // Append general hint button in stagnating scenario
-      if (!hintAvailable && 
-          (generalHint !== "") &&
-          (stagnatedAttempts > 5)) {
-        // Create div containing generalHintButton
-        let generalHintDiv = document.createElement('div');
-        generalHintDiv.id = "general_hint_container";
-
-        let generalHintText = document.createElement('p');
-        generalHintText.id = "general_hint_text"; 
-        generalHintText.style.display = "none";
-        generalHintText.textContent = generalHint;
-
-        let generalHintButton = document.createElement('button');
-        generalHintButton.id = "general_hint_button";
-        generalHintButton.innerHTML = "Show Hint";
-        generalHintButton.addEventListener("click", e => {
-          if (generalHintText.style.display === "none") {
-            // view hint
-            generalHintButton.innerText = "Hide Hint";
-            generalHintText.style.display = "block";
-          } else {
-            // hide hint
-            generalHintButton.innerText = "Show Hint";
-            generalHintText.style.display = "none";
-          }
-        });
-
-        generalHintDiv.appendChild(generalHintButton);
-        predicateInfo.append(generalHintDiv, generalHintText);
-      }
-
-      if (numSatisfied === numPredicates) {
-        let reminder = document.createElement('p');
-        // TODO: change
-        reminder.textContent = "Nice work! Remember, the set of predicates in Playground does not cover every interesting case, so keep writing examples!";
-        predicateInfo.appendChild(reminder);
+  
+        if (numSatisfied === numPredicates) {
+          let reminder = document.createElement('p');
+          // TODO: change
+          reminder.textContent = "Nice work! Remember, the set of predicates in Playground does not cover every interesting case, so keep writing examples!";
+          predicateInfo.appendChild(reminder);
+        }
       }
     }
 
@@ -440,17 +462,18 @@
                     if(rr.isSuccessResult(runResult)) {
                       // On successful compilation
 
-                      // Grab predicates from import file (uses window.assignmentID)
+                      // Grab predicates and type checker from import file (uses window.assignmentID)
                       let predicateModuleName = Object.keys(rr.modules).find(key => key.endsWith(window.assignmentID));
                       let defined = rr.getField(rr.modules[predicateModuleName], "defined-values");
                       let predicates = Object.values(defined).filter(
-                        val => val.__proto__.$name === "pred-generic");
+                        val => val.__proto__.$name === "pred");
+                      let typeChecker = defined["type-checker"];
 
                       // Grab general hint from import OR default to empty string
-                      let hint = defined["general-hint"] || "";
+                      let generalHint = defined["general-hint"] || "";
 
                       return rr.safeCall(function() {
-                        return renderPredicateResults(predicates, values, hint);
+                        return renderPredicateResults(typeChecker, predicates, values, generalHint);
                       }, function(_) {
                         outputPending.remove();
                         outputPendingHidden = true;
