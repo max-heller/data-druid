@@ -897,6 +897,7 @@
 
       var runMainCode = function(src, uiOptions) {
         if(running) { return; }
+        rawInput = "";
         running = true;
         items = [];
         var thiscode = {code: 'def//', erroroutput: false, start: false, end: false, dup: false};
