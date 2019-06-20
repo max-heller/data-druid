@@ -34,6 +34,9 @@ define("d3", [], function() { return d3; });
 d3_tip = require("d3-tip");
 define("d3-tip", [], function() { return d3_tip(d3); });
 
+showdown = require("showdown");
+define("showdown", [], function () { return showdown; });
+
 if(!!google) {
   define("google-charts", [], function() {return google;});
 }

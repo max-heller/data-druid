@@ -37,6 +37,9 @@
 
     var converter = $.colorspaces.converter('CIELAB', 'hex');
 
+    const markdownConverter = new showdown.Converter();
+    markdownConverter.setFlavor('github');
+
     function hueToRGB(hue) {
       var a = 40*Math.cos(hue);
       var b = 40*Math.sin(hue)
@@ -957,7 +960,13 @@
             }, "optional: help(contents)");
           },
           "text": function(txt) {
-            return $("<span>").text(txt);
+            const leadingWhitespace = txt.charAt(0) === " ";
+            // FIXME: bandaid fix, think of better way to deal with MD removing
+            // leading spaces
+            let html = markdownConverter.makeHtml(txt);
+            html = html.replace(/<p>/g, "<span>");  
+            html = html.replace(/<\/p>/g,"</span>");
+            return leadingWhitespace ? html.replace(/<span>/, "<span> ") : html;
           },
           "code": function(contents) {
             return runtime.safeCall(function() {
