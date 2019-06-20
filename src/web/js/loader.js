@@ -18,8 +18,8 @@ var texts = [
     "Polishing the spyglass...",
     "Latching the portholes..."
   ];
-$("#loader p").text(texts[Math.floor(Math.random() * texts.length)]);
-var intervalID = setInterval(function() {
-  $("#loader p").text(texts[Math.floor(Math.random() * texts.length)]);
-}, 1300);
-$("#loader").data("intervalID", intervalID);
+// $("#loader p").text(texts[Math.floor(Math.random() * texts.length)]);
+// var intervalID = setInterval(function() {
+//   $("#loader p").text(texts[Math.floor(Math.random() * texts.length)]);
+// }, 1300);
+// $("#loader").data("intervalID", intervalID);

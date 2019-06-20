@@ -156,7 +156,11 @@ requirejs(["pyret-base/js/runtime", "pyret-base/js/post-load-hooks", "pyret-base
         $("#runButton").attr("disabled", false);
         $("#runDropdown").attr("disabled", false);
         clearInterval($("#loader").data("intervalID"));
-        $("#loader").hide();
+        if ($("#username").text() !== "a guest") {
+          $("#loader").hide();
+        } else {
+          $("#loader_message").css('display', 'block');
+        }
         CPO.say('Pyret loaded and ready.');
         console.log("REPL ready.");
       });
