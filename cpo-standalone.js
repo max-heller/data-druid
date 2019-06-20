@@ -156,7 +156,7 @@ requirejs(["pyret-base/js/runtime", "pyret-base/js/post-load-hooks", "pyret-base
         $("#runButton").attr("disabled", false);
         $("#runDropdown").attr("disabled", false);
         clearInterval($("#loader").data("intervalID"));
-        if ($("#username").text() !== "a guest") {
+        if ($("#username").text() !== "guest") {
           $("#loader").hide();
         } else {
           $("#loader_message").css('display', 'block');
