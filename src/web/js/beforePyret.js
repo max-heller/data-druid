@@ -238,6 +238,7 @@ $(function() {
         var name = user.displayName;
         if (user.emails && user.emails[0] && user.emails[0].value) {
           name = user.emails[0].value;
+          $("#loader").hide();
         }
         target.text(name);
       });
