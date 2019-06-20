@@ -263,7 +263,7 @@
             if (attemptResult === "correct") task_id--;
             window.assignment_id
               .then(function (assignment_id) {
-                fetch("https://us-central1-data-druid-brown.cloudfunctions.net/logger", {
+                fetch("https://us-central1-data-druid-brown.cloudfunctions.net/classroom_logger", {
                   method: 'PUT',
                   body: JSON.stringify({
                     student_email: $("#username").text(),
