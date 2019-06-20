@@ -626,6 +626,7 @@ body {
 
 #bonniemenuContents {
   min-width: 200px;
+  margin: 0px;
 }
 #filemenuContents {
   min-width: 200px;
