@@ -401,10 +401,10 @@ div.spy-block > table > th { display: none; }
   font-weight: bold;
 }
 
-.attempt > p {
-  padding-left: 10px;
-  padding-right: 10px;
+.attempt > p, .attempt > pre {
+  padding: 5px 10px;
   margin: 0px;
+  background: #adc9ef;
 }
 
 /* Feedback paragraphs */
@@ -414,18 +414,17 @@ div.spy-block > table > th { display: none; }
   border-radius: 5px;
 }
 
+.attempt > p:first-child:empty {
+  padding: 0px;
+  margin: 0px;
+}
+
 .attempt-correct > p:first-child {
   background: #c5e1a5;
 }
 
 .attempt-incorrect > p:first-child, .attempt-pyret-error > p:first-child {
   background: #FFECB3;
-}
-
-.attempt > p + p {
-  background: #adc9ef;
-  padding-top: 5px;
-  padding-bottom: 5px;
 }
 
 .attempt > p:nth-child(2) {
