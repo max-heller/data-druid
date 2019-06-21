@@ -39,6 +39,7 @@
 
     const markdownConverter = new showdown.Converter();
     markdownConverter.setFlavor('github');
+    const markdownPrefix = "markdown://";
 
     function hueToRGB(hue) {
       var a = 40*Math.cos(hue);
@@ -960,13 +961,12 @@
             }, "optional: help(contents)");
           },
           "text": function(txt) {
-            const leadingWhitespace = txt.charAt(0) === " ";
-            // FIXME: bandaid fix, think of better way to deal with MD removing
-            // leading spaces
-            let html = markdownConverter.makeHtml(txt);
-            html = html.replace(/<p>/g, "<span>");  
-            html = html.replace(/<\/p>/g,"</span>");
-            return leadingWhitespace ? html.replace(/<span>/, "<span> ") : html;
+            if (txt.startsWith(markdownPrefix)) {
+              return markdownConverter.makeHtml(txt.slice(markdownPrefix.length))
+                .replace(/<p>/g, "<span>").replace(/<\/p>/g,"</span>");
+            } else {
+              return $("<span>").text(txt);
+            }
           },
           "code": function(contents) {
             return runtime.safeCall(function() {

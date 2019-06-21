@@ -112,7 +112,7 @@ fun get-task-list(
       ask:
         | is-List(elt) then:
           elt.foldr({(content, acc): to-ED-unwrapped(content) + acc}, empty)
-        | is-string(elt) then: [list: ED.text(elt)]
+        | is-string(elt) then: [list: ED.text("markdown://" + elt)]
         | otherwise: [list: ED.embed(elt)]
       end
     end
