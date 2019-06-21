@@ -962,8 +962,7 @@
           },
           "text": function(txt) {
             if (txt.startsWith(markdownPrefix)) {
-              return markdownConverter.makeHtml(txt.slice(markdownPrefix.length))
-                .replace(/<p>/g, "<span>").replace(/<\/p>/g,"</span>");
+              return markdownConverter.makeHtml(txt.slice(markdownPrefix.length));
             } else {
               return $("<span>").text(txt);
             }

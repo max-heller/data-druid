@@ -381,10 +381,6 @@ div.spy-block > table > th { display: none; }
   margin: 0px;
 }
 
-.attempt p {
-  margin: 0px;
-}
-
 .attempt ul {
   list-style-type: disc;
 }
