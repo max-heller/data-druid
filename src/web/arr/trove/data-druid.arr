@@ -9,6 +9,7 @@ import srcloc as S
 import valueskeleton as VS
 include image
 include lists
+include option
 
 
 ################## DEFINITIONS
@@ -100,7 +101,7 @@ fun get-task-list(
     items :: List<{Any; (Any -> Boolean)}>,
     opening-prompt :: Any,
     closing-prompt :: Any,
-    instructor-defn :: ED.ErrorDisplay)
+    instructor-defn :: Option<ED.ErrorDisplay>)
   -> List<Task>:
   doc: "Takes instructor list and converts to a list of Task objects"
 
@@ -134,9 +135,12 @@ fun get-task-list(
   # First prompt includes non-optional data definition
   first = base-task(
     ED.h-sequence(
-      to-ED(opening-prompt) + [list:
-        [ED.para: instructor-defn],
-        [ED.para: ED.text("Ready to begin? Enter yes or no.")]],
+      to-ED(opening-prompt) +
+      cases (Option) instructor-defn:
+        | some(defn) => [list: [ED.para: defn]]
+        | none => empty
+      end +
+      [list: [ED.para: ED.text("Ready to begin? Enter yes or no.")]],
       " "),
     is-yes)
 
@@ -144,7 +148,11 @@ fun get-task-list(
   rest = items.foldr(
     lam(item, acc-tasks):
       prompt = ED.h-sequence(
-        to-ED(item.{0}) + [list: [ED.para: ED.optional(instructor-defn)]],
+        to-ED(item.{0}) + 
+        cases (Option) instructor-defn:
+          | some(defn) => [list: [ED.para: ED.optional(defn)]]
+          | none => empty
+        end,
         " ")
       link(base-task(prompt, item.{1}), acc-tasks)
     end,

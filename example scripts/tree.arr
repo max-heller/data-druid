@@ -72,7 +72,7 @@ instructor-defn =
   make-instructor-defn(defn-start, defn-char-start, defn-end, defn-char-end)
 
 tasks =
-  get-task-list(task-list, opening-prompt, closing-prompt, instructor-defn)
+  get-task-list(task-list, opening-prompt, closing-prompt, some(instructor-defn))
 
 session = state(neutral, tasks)
 funs = make-funs(session)
