@@ -461,7 +461,7 @@
 
       let impossibleButton = document.createElement("button");
       impossibleButton.id = "impossibleButton";
-      impossibleButton.innerText = "Impossible!";
+      impossibleButton.innerText = "Impossible";
       impossibleButton.onclick = function(button) {
         runner("impossible");
       };

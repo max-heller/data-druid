@@ -409,14 +409,6 @@ div.spy-block > table > th { display: none; }
   background: #adc9ef;
 }
 
-.attempt p code {
-  background: #eee;
-  color: black;
-  padding: 2.5px;
-  margin: 0px 3px;
-  border-radius: 5px;
-}
-
 /* Feedback paragraphs */
 .attempt > *:first-child:not(:empty) {
   padding: 10px;
@@ -444,17 +436,35 @@ div.spy-block > table > th { display: none; }
 }
 
 .attempt > *:last-child {
-  padding-bottom: 10px;
+  padding-bottom: 12px;
   border-bottom-left-radius: 5px;
   border-bottom-right-radius: 5px;
 }
 
+.attempt p code {
+  background: #eee;
+  color: black;
+  padding: 2.5px;
+  margin: 0px 3px;
+  border-radius: 4px;
+}
+
+.attempt pre {
+  padding-left: 25px;
+}
+
 #impossibleButton {
   position: absolute;
-  bottom: 0;
+  bottom: -2.5em;
   right: 0;
   margin: 5px;
   z-index: 10;
+  border: solid #ccc 1px;
+  color: black;
+}
+
+#impossibleButton:hover {
+  cursor: pointer;
 }
 
 .expandText{
