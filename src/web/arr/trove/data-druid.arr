@@ -113,14 +113,19 @@ fun get-task-list(
       ask:
         | is-List(elt) then:
           elt.foldr({(content, acc): to-ED-unwrapped(content) + acc}, empty)
-        | is-string(elt) then:
-          lines = string-split-all(elt, "\n")
-          lines.map(ED.text)
+        | is-string(elt) then: [list: ED.text("markdown://" + elt)]
+        | ED.is-ErrorDisplay(elt) then: [list: elt]
         | otherwise: [list: ED.embed(elt)]
       end
     end
 
-    to-ED-unwrapped(contents).map({(x): [ED.para: x]})
+    to-ED-unwrapped(contents).map(
+      lam(elt):
+        ask:
+          | ED.is-text(elt) or ED.is-paragraph(elt) then: elt
+          | otherwise: [ED.para: elt]
+        end
+      end)
   where:
     to-ED("test") is [list: [ED.para: ED.text("test")]]
     to-ED([list: "a", circle(10, "solid", "green"), "b"]) is [list:

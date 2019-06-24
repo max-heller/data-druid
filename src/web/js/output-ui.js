@@ -37,6 +37,10 @@
 
     var converter = $.colorspaces.converter('CIELAB', 'hex');
 
+    const markdownConverter = new showdown.Converter();
+    markdownConverter.setFlavor('github');
+    const markdownPrefix = "markdown://";
+
     function hueToRGB(hue) {
       var a = 40*Math.cos(hue);
       var b = 40*Math.sin(hue)
@@ -957,7 +961,11 @@
             }, "optional: help(contents)");
           },
           "text": function(txt) {
-            return $("<span>").text(txt);
+            if (txt.startsWith(markdownPrefix)) {
+              return markdownConverter.makeHtml(txt.slice(markdownPrefix.length));
+            } else {
+              return $("<span>").text(txt);
+            }
           },
           "code": function(contents) {
             return runtime.safeCall(function() {

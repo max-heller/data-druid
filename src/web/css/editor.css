@@ -381,40 +381,59 @@ div.spy-block > table > th { display: none; }
   margin: 0px;
 }
 
-.attempt p {
-  padding-left: 10px;
-  padding-right: 10px;
+.attempt ul {
+  list-style-type: disc;
+}
+
+.attempt ol {
+  list-style-type: decimal;
+}
+
+.attempt ul, .attempt ol {
+  margin-top: .5em;
+  margin-bottom: .5em;
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 30px;
+}
+
+.attempt strong {
+  font-weight: bold;
+}
+
+.attempt > p, .attempt > pre {
+  padding: 5px 10px;
   margin: 0px;
+  background: #adc9ef;
 }
 
 /* Feedback paragraphs */
-.attempt p:first-child:not(:empty) {
+.attempt > p:first-child:not(:empty) {
   padding: 10px;
   margin-bottom: 5px;
   border-radius: 5px;
 }
 
-.attempt-correct p:first-child {
+.attempt > p:first-child:empty {
+  padding: 0px;
+  margin: 0px;
+}
+
+.attempt-correct > p:first-child {
   background: #c5e1a5;
 }
 
-.attempt-incorrect p:first-child, .attempt-pyret-error p:first-child {
+.attempt-incorrect > p:first-child, .attempt-pyret-error > p:first-child {
   background: #FFECB3;
 }
 
-.attempt p + p {
-  background: #adc9ef;
-  padding-top: 5px;
-  padding-bottom: 5px;
-}
-
-.attempt p:nth-child(2) {
+.attempt > p:nth-child(2) {
   padding-top: 10px;
   border-top-left-radius: 5px;
   border-top-right-radius: 5px;
 }
 
-.attempt p:last-child {
+.attempt > p:last-child {
   padding-bottom: 10px;
   border-bottom-left-radius: 5px;
   border-bottom-right-radius: 5px;
