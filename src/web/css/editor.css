@@ -118,6 +118,8 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket-region {
 #REPL {
   font-family: sans-serif;
   background: #f8f8f8;
+  width: 100%;
+  left: 0%;
 }
 
 .replTextOutput {
@@ -579,7 +581,7 @@ body {
   position: absolute;
   z-index: 8500;
   left: 0;
-  width: 50%;
+  width: 0%;
   top:0;
   height: 100%;
   max-height: 100%;
@@ -1300,6 +1302,7 @@ code div {
 
 /* Resizable REPL */
 #handle{
+  display: none;
   background:-webkit-linear-gradient(left, #BFBFBF 0%,#D9D9D9 40%,#D9D9D9 60%,#BFBFBF 100%);
   background:-o-linear-gradient(left, #BFBFBF 0%,#D9D9D9 40%,#D9D9D9 60%,#BFBFBF 100%);
   background:-moz-linear-gradient(left, #BFBFBF 0%,#D9D9D9 40%,#D9D9D9 60%,#BFBFBF 100%);

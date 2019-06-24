@@ -115,6 +115,7 @@ function checkVersion() {
 window.setInterval(checkVersion, VERSION_CHECK_INTERVAL);
 
 window.CPO = {
+  isReady: false,
   save: function() {},
   autoSave: function() {},
   documents : new Documents()
@@ -238,7 +239,7 @@ $(function() {
         var name = user.displayName;
         if (user.emails && user.emails[0] && user.emails[0].value) {
           name = user.emails[0].value;
-          $("#loader").hide();
+          if (CPO.isReady) $("#loader").hide();
         }
         target.text(name);
       });
