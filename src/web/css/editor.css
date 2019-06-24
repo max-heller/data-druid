@@ -443,10 +443,10 @@ div.spy-block > table > th { display: none; }
 
 .attempt p code {
   background: #eee;
-  color: black;
-  padding: 2.5px;
+  color: #CD5C5C;
+  padding: 0px 2.5px;
   margin: 0px 3px;
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 .attempt pre {
