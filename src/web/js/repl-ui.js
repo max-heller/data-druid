@@ -244,6 +244,9 @@
         stagnatedAttempts = 0;
       }
       lastSubmissionSatisfied = numSatisfied;
+      
+      let predicateInfo = document.createElement('div');
+      predicateInfo.classList.add('predicate_info');
 
       if (invalidPositions.length > 0) {
         // Set widget graph to question mark
@@ -254,15 +257,12 @@
 
         let message = document.createElement('p');
         message.textContent = "The highlighted data examples did not fit the problem specifications. If you're unsure as to why, take another look at the assignment's data definition.";
-        output.append(message);
+        predicateInfo.append(message);
       } else {
         // Set widget graph
         statusWidget.predicateGraph.value = {
           numerator: numSatisfied, denominator: numPredicates
         };
-  
-        let predicateInfo = document.createElement('div');
-        predicateInfo.classList.add('predicate_info');
   
         let intro = document.createElement('p');
         // TODO: change to a more appropriate message
@@ -358,20 +358,19 @@
           predicateInfo.appendChild(hintNotice);
         }
   
-        output.append(predicateInfo);
-  
+        
         // Append general hint button if student is eligible for it AND is not for a general hint
         if (!specificHintEligible &&
-            isGeneralHintEligible.app(stagnatedAttempts, numPredicates, numSatisfied)) {
+          isGeneralHintEligible.app(stagnatedAttempts, numPredicates, numSatisfied)) {
           // Create div containing generalHintButton
           let generalHintDiv = document.createElement('div');
           generalHintDiv.id = "general_hint_container";
-  
+          
           let generalHintText = document.createElement('p');
           generalHintText.id = "general_hint_text"; 
           generalHintText.style.display = "none";
           generalHintText.textContent = generalHint;
-  
+          
           let generalHintButton = document.createElement('button');
           generalHintButton.id = "general_hint_button";
           generalHintButton.innerHTML = "Show Hint";
@@ -386,11 +385,11 @@
               generalHintText.style.display = "none";
             }
           });
-  
+          
           generalHintDiv.appendChild(generalHintButton);
           predicateInfo.append(generalHintDiv, generalHintText);
         }
-  
+        
         if (numSatisfied === numPredicates) {
           let reminder = document.createElement('p');
           // TODO: change
@@ -398,6 +397,7 @@
           predicateInfo.appendChild(reminder);
         }
       }
+      output.append(predicateInfo);
     }
 
     // the result of applying `displayResult` is a function that MUST
