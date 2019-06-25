@@ -4,8 +4,19 @@ provide *
 include shared-gdrive("playground.arr", "1sRD4hBi-TP9j_FBCg5ZZxo50rcUqFOR1")
 include tables
 
-# gradebook = 
-#   table: name :: String, SNC :: Boolean, exam1 :: Number, exam2 :: Number end
+fun valid-grade(score :: Number) -> Boolean:
+  (score >= 0) and (score <= 100)
+end
+
+type Grade = Number%(valid-grade)
+
+T = 
+  table: 
+    name :: String, 
+    SNC :: Boolean, 
+    exam1 :: Grade,
+    exam2 :: Grade
+  end
 
 fun type-checker(x :: Any) -> Boolean:
   is-row(x) and 
