@@ -403,6 +403,14 @@ div.spy-block > table > th { display: none; }
   font-weight: bold;
 }
 
+.attempt blockquote p {
+  background: #fafafa;
+  padding: 10px;
+  border-left: solid 5px rgba(0,0,0,0.3);
+  margin: 5px;
+  background-clip: padding-box;
+}
+
 .attempt > * {
   padding: 5px 10px;
   margin: 0px;
@@ -461,6 +469,7 @@ div.spy-block > table > th { display: none; }
   z-index: 10;
   border: solid #ccc 1px;
   color: black;
+  background: white;
 }
 
 #impossibleButton:hover {
