@@ -4,7 +4,7 @@ import valueskeleton as VS
 import error-display as ED
 import lists as L
 
-opening-prompt = [list: "**Data Druid: Function Practice**","The following prompts will ask you to explore and write some Pyret functions."]
+opening-prompt = [list: "### Data Druid: Function Practice","The following prompts will ask you to explore and write some Pyret functions."]
 
 candy = table: name, sugar-percent
   row: "100 Grand", 0.73199999
