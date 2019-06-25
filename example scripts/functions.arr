@@ -4,7 +4,7 @@ import valueskeleton as VS
 import error-display as ED
 import lists as L
 
-opening-prompt = [list: "**Data Druid: Function Practice**","The following prompts will ask you to explore and write some Pyret functions."]
+opening-prompt = [list: "### Data Druid: Function Practice","The following prompts will ask you to explore and write some Pyret functions."]
 
 candy = table: name, sugar-percent
   row: "100 Grand", 0.73199999
@@ -36,7 +36,7 @@ task-list :: List<{Any; (Any -> Boolean)}> = [list:
   |#
   {"Is `link(3, 4)` a valid list? Enter yes or no.";
     is-no},
-  {"Can you construct a valid list that only contains 3 and 4?";
+  {"Construct a valid list that only contains 3 and 4.";
     _ == [list: 3, 4]},
   {[list:"Alice wrote the following function to find the product of all numbers in a list:",
       "```\nfun list-product(lst :: List) -> Number:\n  cases (List) lst:\n    | empty => 0\n    | link(first, rest) => first * list-product(lst)\n  end\nend\n```",
