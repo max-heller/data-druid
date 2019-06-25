@@ -412,11 +412,45 @@ li.topTier > div {
   float: right;
 }
 
+.attempt h1 {
+  display: block;
+  font-size: 2em;
+  font-weight: bold;
+}
 
-/* h3 {
+.attempt h2 {
+  display: block;
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.attempt h3 {
+  display: block;
+  font-size: 1.17em;
+  font-weight: bold;
+}
+
+.attempt h4 {
+  display: block;
+  font-weight: bold;
+}
+
+.attempt h5 {
+  display: block;
+  font-size: .83em;
+  font-weight: bold;
+}
+
+.attempt h6 {
+  display: block;
+  font-size: .67em;
+  font-weight: bold;
+}
+
+h3 {
   font-size: 16pt;
   font-weight: bold;
-} */
+}
 
 p {
   margin: .5em;
