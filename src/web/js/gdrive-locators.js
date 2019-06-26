@@ -51,6 +51,10 @@ define("cpo/gdrive-locators", [], function() {
         return "Could not load file with name " + filename;
       }
 
+      if (filename === 'assignment') {
+        return makeSharedGDriveLocator("predicates.arr", window.predicateFileId);
+      }
+
       // Pause because we'll fetch the Google Drive file object and restart
       // with it to create the actual locator
       return runtime.pauseStack(function(restarter) {
@@ -206,7 +210,7 @@ define("cpo/gdrive-locators", [], function() {
         contentsP.then(function(fileAndContents) {
           var file = fileAndContents[0];
           var contents = fileAndContents[1];
-          
+
           var uri = "shared-gdrive://" + file.getName() + ":" + file.getUniqueId();
           CPO.documents.set(uri, new CodeMirror.Doc(contents, "pyret"));
 
@@ -219,7 +223,7 @@ define("cpo/gdrive-locators", [], function() {
                 return gmf(parsePyret, "surface-parse").app(contents, uri);
               }, function(ret) {
                 ast = gmf(compileLib, "pyret-ast").app(ret);
-                return ast; 
+                return ast;
               }, "sharedgdrive-locator:parse-contents");
             }
           }

@@ -96,7 +96,7 @@ function checkVersion() {
   $.get("/current-version").then(function(resp) {
     resp = JSON.parse(resp);
     if(resp.version && resp.version > Number(window.CURRENT_VERSION)) {
-      window.stickMessage("A new version of Examplar is available. Save and reload the page to get the newest version.");
+      window.stickMessage("A new version of Data Druid is available. Save and reload the page to get the newest version.");
     }
   });
 }
@@ -257,11 +257,17 @@ $(function() {
           console.log("Logged in and has program to load: ", toLoad);
           loadProgram(toLoad);
           programToSave = toLoad;
+          $(window).unbind("beforeunload");
+          window.location.reload();
+        } else if(params["get"] && params["get"]["template"]) {
+          var toLoad = api.api.getTemplateFileById(params["get"]["template"]);
+          loadProgram(toLoad);
+          programToSave = toLoad;
+          $(window).unbind("beforeunload");
+          window.location.reload();
         } else {
+          window.location.href = "/";
           programToSave = Q.fcall(function() { return null; });
-        }
-        if(params["get"] && params["get"]["assignment"]) {
-          window.assignmentID = params["get"]["assignment"];
         }
       });
       api.collection.fail(function() {
@@ -286,30 +292,14 @@ $(function() {
       enableFileOptions();
       programLoad = api.getFileById(params["get"]["program"]);
       programLoad.then(function(p) { showShareContainer(p); });
-    }
-    if(params["get"] && params["get"]["share"]) {
-      logger.log('shared-program-load',
+    } else if(params["get"] && params["get"]["template"]) {
+      logger.log('template-program-load',
         {
-          id: params["get"]["share"]
+          id: params["get"]["template"]
         });
-      programLoad = api.getSharedFileById(params["get"]["share"]);
-      programLoad.then(function(file) {
-        // NOTE(joe): If the current user doesn't own or have access to this file
-        // (or isn't logged in) this will simply fail with a 401, so we don't do
-        // any further permission checking before showing the link.
-        file.getOriginal().then(function(response) {
-          console.log("Response for original: ", response);
-          var original = $("#open-original").show().off("click");
-          var id = response.result.value;
-          original.removeClass("hidden");
-          original.click(function() {
-            window.open(window.APP_BASE_URL + "/editor#program=" + id, "_blank");
-          });
-        });
-      });
-    }
-    if(params["get"] && params["get"]["assignment"]) {
-      window.assignmentID = params["get"]["assignment"];
+      programLoad = api.getTemplateFileById(params["get"]["template"]);
+    } else {
+      window.location.href = "/";
     }
     if(programLoad) {
       programLoad.fail(function(err) {
@@ -370,7 +360,9 @@ $(function() {
   var programLoaded = loadProgram(initialProgram);
   window.programLoaded = programLoaded;
 
-  var programToSave = initialProgram;
+  var programToSave = programLoaded.then(function(){ return initialProgram });
+
+  window.assignmentID = programToSave.then(function(p) { return p.getAssignment() });
 
   window.user = storageAPI.then(api => api.about()).then(about => about.user.emailAddress);
 
@@ -636,15 +628,33 @@ $(function() {
 
   programLoaded.then(function(c) {
     CPO.documents.set("definitions://", CPO.editor.cm.getDoc());
+    CPO.editor.cm.setOption('readOnly', false);
 
     // NOTE(joe): Clearing history to address https://github.com/brownplt/pyret-lang/issues/386,
     // in which undo can revert the program back to empty
-    CPO.editor.cm.setValue(c);
     CPO.editor.cm.clearHistory();
+    CPO.editor.cm.setValue(c);
+
+    // Freeze the document contents up to the following border
+    var border = "# DO NOT CHANGE ANYTHING ABOVE THIS LINE";
+    var border_end_index = c.indexOf(border) + border.length;
+    var border_end_pos = CPO.editor.cm.posFromIndex(border_end_index);
+
+    let marker =
+      CPO.editor.cm.doc.markText({line:0,ch:0}, {line: border_end_pos.line + 1, ch: 0},
+        { inclusiveLeft: true,
+          inclusiveRight: false,
+          addToHistory: false,
+          readOnly: true,
+          className: "import-marker" });
+
+    marker.lines.slice(0, -1).forEach(function(line) {
+      CPO.editor.cm.doc.addLineClass(line, "wrap", "import-line-background");
+    });
   });
 
-  programLoaded.fail(function() {
-    CPO.documents.set("definitions://", CPO.editor.cm.getDoc());
+  programLoaded.fail(function(error) {
+    window.stickError("Unable to load program.", error.toString());
   });
 
   var pyretLoad = document.createElement('script');
@@ -720,7 +730,6 @@ $(function() {
 
   programLoaded.fin(function() {
     CPO.editor.focus();
-    CPO.editor.cm.setOption("readOnly", false);
   });
 
   CPO.autoSave = autoSave;
