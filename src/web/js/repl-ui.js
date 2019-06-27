@@ -217,189 +217,204 @@
         }
       }
 
-      // logging
-      Q.all([window.user, window.assignmentID]).then(([email, id]) => {
-        fetch("https://us-central1-data-druid-brown.cloudfunctions.net/playground_logger", {
-          method: 'PUT',
-          body: JSON.stringify({
-            student_email: email,
-            assignment_id: id,
-            submission: CPO.documents.get("definitions://").getValue(),
-            invalid: JSON.stringify(invalidPositions.map(posToLineNumbers)),
-            results: JSON.stringify(results.map(
-              catchers => catchers.map(posToLineNumbers)
-            ))
-          }),
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-      });
-
-      let numPredicates = predicates.length;
-      let numSatisfied = results.filter(catchers => catchers.length > 0).length;
-
-      // Increment stagnatedAttempts if numSatisfied did not increase
-      if (numSatisfied <= lastSubmissionSatisfied) {
-        stagnatedAttempts++;
-      } else {
-        stagnatedAttempts = 0;
-      }
-      lastSubmissionSatisfied = numSatisfied;
-
-      let predicateInfo = document.createElement('div');
-      predicateInfo.classList.add('predicate_info');
-
-      if (invalidPositions.length > 0) {
-        // Set widget graph to question mark
-        statusWidget.predicateGraph.value = {};
-
-        // Highlight offending instances
-        invalidPositions.forEach(pos => pos.highlight('#ffac48'));
-
-        let message = document.createElement('p');
-        message.textContent = "The highlighted data examples did not fit the problem specifications. If you're unsure as to why, take another look at the assignment's data definition.";
-        predicateInfo.append(message);
-      } else {
-        // Set widget graph
-        statusWidget.predicateGraph.value = {
-          numerator: numSatisfied, denominator: numPredicates
-        };
-
-        let intro = document.createElement('p');
-        // TODO: change to a more appropriate message
-        // E.g., "You found X of the Y interesting cases."
-        intro.textContent = `You satisfied ${numSatisfied} out of ${numPredicates} predicates:`;
-        predicateInfo.appendChild(intro);
-
-        let predicateListContainer = document.createElement('div');
-        predicateListContainer.id = 'predicate_list_container';
-        let predicateList = document.createElement('ul');
-        predicateList.classList.add('predicate_list');
-        let hintBox = document.createElement('p');
-        hintBox.id = 'hint_box';
-        hintBox.style.display = 'none';
-        predicateListContainer.append(predicateList, hintBox);
-
-        // Check if student is eligible for predicate-specific hint
-        let specificHintEligible =
-          isSpecificHintEligible.app(stagnatedAttempts, numPredicates, numSatisfied);
-
-        /**
-         * Create a circle icon for the given predicate.
-         * @param {*} catchers List of srcloc each representing the satisfying student example
-         * @param {string} hint Predicate-specific hint
-         */
-        function renderPredicate(catchers, hint) {
-
-          let predicate = document.createElement('a');
-          predicate.setAttribute('href', '#');
-          predicate.classList.add('predicate');
-          predicate.textContent = '💡';
-
-          // Add hint if predicate is unsatisfied AND student is eligible for the hint
-          if (catchers.length > 0) {
-            predicate.classList.add('satisfied');
-          } else if (specificHintEligible) {
-            predicate.addEventListener('click', e => {
-              // Remove hinted class from other predicates
-              predicateList.querySelectorAll('.hintable').forEach(pred => {
-                if (pred !== predicate) pred.classList.remove('hinted');
-              });
-
-              // Display/hide hint
-              if (predicate.classList.toggle('hinted')) {
-                // Class was added, display hint
-                hintBox.textContent = "Hint: " + hint;
-                hintBox.style.display = 'block';
-              } else {
-                // Class was removed, hide hint
-                hintBox.style.display = 'none';
-                hintBox.textContent = "";
-              }
-            });
-            predicate.classList.add('hintable');
-            predicate.title = "Click for a hint!";
-          }
-
-          predicate.addEventListener('click', e => {
-            e.preventDefault();
-          });
-
-          // Highlight on hover, remove highlight on focus loss
-          predicate.addEventListener('mouseenter', function () {
-            catchers.forEach(loc => loc.highlight('#91ccec'));
-          });
-          predicate.addEventListener('mouseleave', function () {
-            catchers.forEach(loc => loc.highlight(''));
-          });
-
-          return predicate;
+      window.user.then(email => {
+        let toolAssignment;
+        if (window.studentToolAssignments.checked.includes(email)) {
+          toolAssignment = 'checked';
+        } else if (window.studentToolAssignments.playground.includes(email)) {
+          toolAssignment = 'playground';
+        } else {
+          console.error("Student not assigned to a tool");
+          return CPO.say("Your email is not associated with this assignment, please contact your instructor");
         }
 
-        // Generate predicate circle icons
-        let hints = predicates.map(pred => runtime.getField(pred, "hint"));
-        results.map((catchers, i) => renderPredicate(catchers, hints[i]))
-          .forEach(function (predicate_widget) {
-            let li = document.createElement('li');
-            li.appendChild(predicate_widget);
-            predicateList.appendChild(li);
-          });
-
-        predicateInfo.appendChild(predicateListContainer);
-
-        let outro = document.createElement('p');
-        // TODO: change to something more appropriate
-        outro.textContent = "The predicates you satisfied are highlighted above in blue. Mouseover a predicate to see which of your examples satisfied it.";
-        predicateInfo.appendChild(outro);
-
-        // If student is eligible for a specific hint, display a hint tip
-        if (specificHintEligible) {
-          let hintNotice = document.createElement("p");
-          hintNotice.textContent = "If you're feeling stuck, you can click on an unsatisfied predicate for a hint!";
-          predicateInfo.appendChild(hintNotice);
-        }
-
-
-        // Append general hint button if student is eligible for it AND is not for a general hint
-        if (!specificHintEligible &&
-          isGeneralHintEligible.app(stagnatedAttempts, numPredicates, numSatisfied)) {
-          // Create div containing generalHintButton
-          let generalHintDiv = document.createElement('div');
-          generalHintDiv.id = "general_hint_container";
-
-          let generalHintText = document.createElement('p');
-          generalHintText.id = "general_hint_text";
-          generalHintText.style.display = "none";
-          generalHintText.textContent = generalHint;
-
-          let generalHintButton = document.createElement('button');
-          generalHintButton.id = "general_hint_button";
-          generalHintButton.innerHTML = "Show Hint";
-          generalHintButton.addEventListener("click", e => {
-            if (generalHintText.style.display === "none") {
-              // view hint
-              generalHintButton.innerText = "Hide Hint";
-              generalHintText.style.display = "block";
-            } else {
-              // hide hint
-              generalHintButton.innerText = "Show Hint";
-              generalHintText.style.display = "none";
+        // logging
+        window.assignmentID.then(id => {
+          fetch("https://us-central1-data-druid-brown.cloudfunctions.net/playground_logger", {
+            method: 'PUT',
+            body: JSON.stringify({
+              student_email: email,
+              assignment_id: id,
+              tool: toolAssignment,
+              submission: CPO.documents.get("definitions://").getValue(),
+              invalid: JSON.stringify(invalidPositions.map(posToLineNumbers)),
+              results: JSON.stringify(results.map(
+                catchers => catchers.map(posToLineNumbers)
+              ))
+            }),
+            headers: {
+              'Content-Type': 'application/json'
             }
           });
+        });
 
-          generalHintDiv.appendChild(generalHintButton);
-          predicateInfo.append(generalHintDiv, generalHintText);
-        }
+        if (toolAssignment === 'playground') return;
 
-        if (numSatisfied === numPredicates) {
-          let reminder = document.createElement('p');
-          // TODO: change
-          reminder.textContent = "Nice work! Remember, the set of predicates in Playground does not cover every interesting case, so keep writing examples!";
-          predicateInfo.appendChild(reminder);
+        let numPredicates = predicates.length;
+        let numSatisfied = results.filter(catchers => catchers.length > 0).length;
+
+        // Increment stagnatedAttempts if numSatisfied did not increase
+        if (numSatisfied <= lastSubmissionSatisfied) {
+          stagnatedAttempts++;
+        } else {
+          stagnatedAttempts = 0;
         }
-      }
-      output.append(predicateInfo);
+        lastSubmissionSatisfied = numSatisfied;
+
+        let predicateInfo = document.createElement('div');
+        predicateInfo.classList.add('predicate_info');
+
+        if (invalidPositions.length > 0) {
+          // Set widget graph to question mark
+          statusWidget.predicateGraph.value = {};
+
+          // Highlight offending instances
+          invalidPositions.forEach(pos => pos.highlight('#ffac48'));
+
+          let message = document.createElement('p');
+          message.textContent = "The highlighted data examples did not fit the problem specifications. If you're unsure as to why, take another look at the assignment's data definition.";
+          predicateInfo.append(message);
+        } else {
+          // Set widget graph
+          statusWidget.predicateGraph.value = {
+            numerator: numSatisfied, denominator: numPredicates
+          };
+
+          let intro = document.createElement('p');
+          // TODO: change to a more appropriate message
+          // E.g., "You found X of the Y interesting cases."
+          intro.textContent = `You satisfied ${numSatisfied} out of ${numPredicates} predicates:`;
+          predicateInfo.appendChild(intro);
+
+          let predicateListContainer = document.createElement('div');
+          predicateListContainer.id = 'predicate_list_container';
+          let predicateList = document.createElement('ul');
+          predicateList.classList.add('predicate_list');
+          let hintBox = document.createElement('p');
+          hintBox.id = 'hint_box';
+          hintBox.style.display = 'none';
+          predicateListContainer.append(predicateList, hintBox);
+
+          // Check if student is eligible for predicate-specific hint
+          let specificHintEligible =
+            isSpecificHintEligible.app(stagnatedAttempts, numPredicates, numSatisfied);
+
+          /**
+           * Create a circle icon for the given predicate.
+           * @param {*} catchers List of srcloc each representing the satisfying student example
+           * @param {string} hint Predicate-specific hint
+           */
+          function renderPredicate(catchers, hint) {
+
+            let predicate = document.createElement('a');
+            predicate.setAttribute('href', '#');
+            predicate.classList.add('predicate');
+            predicate.textContent = '💡';
+
+            // Add hint if predicate is unsatisfied AND student is eligible for the hint
+            if (catchers.length > 0) {
+              predicate.classList.add('satisfied');
+            } else if (specificHintEligible) {
+              predicate.addEventListener('click', e => {
+                // Remove hinted class from other predicates
+                predicateList.querySelectorAll('.hintable').forEach(pred => {
+                  if (pred !== predicate) pred.classList.remove('hinted');
+                });
+
+                // Display/hide hint
+                if (predicate.classList.toggle('hinted')) {
+                  // Class was added, display hint
+                  hintBox.textContent = "Hint: " + hint;
+                  hintBox.style.display = 'block';
+                } else {
+                  // Class was removed, hide hint
+                  hintBox.style.display = 'none';
+                  hintBox.textContent = "";
+                }
+              });
+              predicate.classList.add('hintable');
+              predicate.title = "Click for a hint!";
+            }
+
+            predicate.addEventListener('click', e => {
+              e.preventDefault();
+            });
+
+            // Highlight on hover, remove highlight on focus loss
+            predicate.addEventListener('mouseenter', function () {
+              catchers.forEach(loc => loc.highlight('#91ccec'));
+            });
+            predicate.addEventListener('mouseleave', function () {
+              catchers.forEach(loc => loc.highlight(''));
+            });
+
+            return predicate;
+          }
+
+          // Generate predicate circle icons
+          let hints = predicates.map(pred => runtime.getField(pred, "hint"));
+          results.map((catchers, i) => renderPredicate(catchers, hints[i]))
+            .forEach(function (predicate_widget) {
+              let li = document.createElement('li');
+              li.appendChild(predicate_widget);
+              predicateList.appendChild(li);
+            });
+
+          predicateInfo.appendChild(predicateListContainer);
+
+          let outro = document.createElement('p');
+          // TODO: change to something more appropriate
+          outro.textContent = "The predicates you satisfied are highlighted above in blue. Mouseover a predicate to see which of your examples satisfied it.";
+          predicateInfo.appendChild(outro);
+
+          // If student is eligible for a specific hint, display a hint tip
+          if (specificHintEligible) {
+            let hintNotice = document.createElement("p");
+            hintNotice.textContent = "If you're feeling stuck, you can click on an unsatisfied predicate for a hint!";
+            predicateInfo.appendChild(hintNotice);
+          }
+
+
+          // Append general hint button if student is eligible for it AND is not for a general hint
+          if (!specificHintEligible &&
+            isGeneralHintEligible.app(stagnatedAttempts, numPredicates, numSatisfied)) {
+            // Create div containing generalHintButton
+            let generalHintDiv = document.createElement('div');
+            generalHintDiv.id = "general_hint_container";
+
+            let generalHintText = document.createElement('p');
+            generalHintText.id = "general_hint_text";
+            generalHintText.style.display = "none";
+            generalHintText.textContent = generalHint;
+
+            let generalHintButton = document.createElement('button');
+            generalHintButton.id = "general_hint_button";
+            generalHintButton.innerHTML = "Show Hint";
+            generalHintButton.addEventListener("click", e => {
+              if (generalHintText.style.display === "none") {
+                // view hint
+                generalHintButton.innerText = "Hide Hint";
+                generalHintText.style.display = "block";
+              } else {
+                // hide hint
+                generalHintButton.innerText = "Show Hint";
+                generalHintText.style.display = "none";
+              }
+            });
+
+            generalHintDiv.appendChild(generalHintButton);
+            predicateInfo.append(generalHintDiv, generalHintText);
+          }
+
+          if (numSatisfied === numPredicates) {
+            let reminder = document.createElement('p');
+            // TODO: change
+            reminder.textContent = "Nice work! Remember, the set of predicates in Playground does not cover every interesting case, so keep writing examples!";
+            predicateInfo.appendChild(reminder);
+          }
+        }
+        output.append(predicateInfo);
+      });
     }
 
     // the result of applying `displayResult` is a function that MUST
