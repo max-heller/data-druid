@@ -248,7 +248,9 @@
           });
         });
 
-        if (toolAssignment === 'playground') return;
+        if (toolAssignment === 'checked') {
+          $(".playground_status_widget").css('display', 'flex');
+        }
 
         let numPredicates = predicates.length;
         let numSatisfied = results.filter(catchers => catchers.length > 0).length;
@@ -274,7 +276,7 @@
           let message = document.createElement('p');
           message.textContent = "The highlighted data examples did not fit the problem specifications. If you're unsure as to why, take another look at the assignment's data definition.";
           predicateInfo.append(message);
-        } else {
+        } else if (toolAssignment === 'checked') {
           // Set widget graph
           statusWidget.predicateGraph.value = {
             numerator: numSatisfied, denominator: numPredicates
