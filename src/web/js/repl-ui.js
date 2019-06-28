@@ -415,6 +415,11 @@
             predicateInfo.appendChild(reminder);
           }
         }
+
+        const topLevelReminder = document.createElement('p');
+        topLevelReminder.innerText = `Found ${instances.length} data example(s). If you think this number should be higher, make sure to write your examples such that they would show up in the interactions window when run in code.pyret.org. If you have examples bound to names, write the names at top level in the editor.`;
+        predicateInfo.appendChild(topLevelReminder);
+
         output.append(predicateInfo);
       });
     }
