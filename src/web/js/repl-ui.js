@@ -261,12 +261,12 @@
             // If answer was correct, task list will have advanced by this point,
             // so we need to look for the "previous" task id
             if (attemptResult === "correct") task_id--;
-            window.assignment_id
-              .then(function (assignment_id) {
+            Q.all([window.assignment_id, window.user])
+              .then(function ([assignment_id, email]) {
                 fetch("https://us-central1-data-druid-brown.cloudfunctions.net/classroom_logger", {
                   method: 'PUT',
                   body: JSON.stringify({
-                    student_email: $("#username").text(),
+                    student_email: email,
                     assignment_id: assignment_id,
                     task_id: task_id,
                     raw_input: rawInput,
@@ -277,8 +277,8 @@
                   }
                 }).then(function (error) { console.log(error) });
               })
-              .catch(function (_) {
-                alert("No assignment loaded!");
+              .catch(function (err) {
+                alert("No assignment loaded!", err);
               });
           }
         });
