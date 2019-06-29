@@ -34,14 +34,14 @@
     var ffi = runtime.ffi;
 
     var output = jQuery("<div id='output' class='cm-s-default'>");
-    output.append($("<p class='predicate_info'>Playground will check your examples against a suite of instructor-written predicates that look for interesting cases.<p>"));
+    output.append($("<p class='predicate_info'>Data Druid will check your examples against a suite of instructor-written predicates that look for interesting cases.<p>"));
 
     var outputPending = jQuery("<span>").text("Gathering results...");
     var outputPendingHidden = true;
     var canShowRunningIndicator = false;
     var running = false;
 
-    // graph widget for playground results
+    // graph widget for predicate results
     // (taken from Examplar)
     class Graph {
       constructor(value) {
@@ -100,10 +100,10 @@
     class StatusWidget {
       constructor() {
         let element = document.createElement('div');
-        element.classList.add("playground_status_widget");
+        element.classList.add("druid_status_widget");
 
         let predicate_side = document.createElement('div');
-        predicate_side.classList.add("playground_status");
+        predicate_side.classList.add("druid_status");
         predicate_side.innerHTML = "Predicates<br>Satisfied";
         let predicateGraph = new Graph();
         predicate_side.prepend(predicateGraph.element);
@@ -249,7 +249,7 @@
         });
 
         if (toolAssignment === 'checked') {
-          $(".playground_status_widget").css('display', 'flex');
+          $(".druid_status_widget").css('display', 'flex');
         }
 
         let numPredicates = predicates.length;
@@ -411,7 +411,7 @@
           if (numSatisfied === numPredicates) {
             let reminder = document.createElement('p');
             // TODO: change
-            reminder.textContent = "Nice work! Remember, the set of predicates in Playground does not cover every interesting case, so keep writing examples!";
+            reminder.textContent = "Nice work! Remember, the set of predicates in Data Druid does not cover every interesting case, so keep writing examples!";
             predicateInfo.appendChild(reminder);
           }
         }
