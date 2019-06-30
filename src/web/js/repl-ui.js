@@ -179,8 +179,8 @@
      */
     function renderPredicateResults(defined, instances) {
       // Grab predicates from instructor file
-      let predicates = Object.values(defined).filter(
-        val => val.__proto__.$name === "pred");
+      let predicates = Object.entries(defined).filter(
+        ([name, val]) => val.__proto__.$name === "pred");
       let undefinedComponents = (predicates.length === 0) ? ["predicates"] : [];
 
       // Grab type checker, general hint, and hint eligibility checkers
@@ -205,9 +205,13 @@
                                       .map(sv => sv.pos);
 
       // Find the positions of data instances that satisfy each predicate
-      let results = predicates.map(predicate => {
-        return validInstances.filter(sv => runtime.getField(predicate, "f").app(sv.val))
-                    .map(sv => sv.pos);
+      let results = predicates.map(([name, predicate]) => {
+        return {
+          predicate: name,
+          examples: validInstances
+            .filter(sv => runtime.getField(predicate, "f").app(sv.val))
+            .map(sv => sv.pos)
+        };
       });
 
       function posToLineNumbers(pos) {
@@ -238,9 +242,12 @@
               tool: toolAssignment,
               submission: CPO.documents.get("definitions://").getValue(),
               invalid: JSON.stringify(invalidPositions.map(posToLineNumbers)),
-              results: JSON.stringify(results.map(
-                catchers => catchers.map(posToLineNumbers)
-              ))
+              results: JSON.stringify(results.map(result => {
+                return {
+                  name: result.name,
+                  examples: result.examples.map(posToLineNumbers)
+                };
+              }))
             }),
             headers: {
               'Content-Type': 'application/json'
@@ -253,7 +260,7 @@
         }
 
         let numPredicates = predicates.length;
-        let numSatisfied = results.filter(catchers => catchers.length > 0).length;
+        let numSatisfied = results.filter(result => result.examples.length > 0).length;
 
         // Increment stagnatedAttempts if numSatisfied did not increase
         if (numSatisfied <= lastSubmissionSatisfied) {
@@ -354,8 +361,8 @@
           }
 
           // Generate predicate circle icons
-          let hints = predicates.map(pred => runtime.getField(pred, "hint"));
-          results.map((catchers, i) => renderPredicate(catchers, hints[i]))
+          let hints = predicates.map(([name, pred]) => runtime.getField(pred, "hint"));
+          results.map((result, i) => renderPredicate(result.examples, hints[i]))
             .forEach(function (predicate_widget) {
               let li = document.createElement('li');
               li.appendChild(predicate_widget);
