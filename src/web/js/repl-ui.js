@@ -170,6 +170,9 @@
       );
     }
 
+    // Array to store hints the student uses for each submission
+    const hintsUsed = new Set();
+
     // This predicate rendering system is based on examplar's predicate rendering
     // (https://github.com/brownplt/examplar)
     /**
@@ -241,10 +244,11 @@
               assignment_id: id,
               tool: toolAssignment,
               submission: CPO.documents.get("definitions://").getValue(),
+              hints: JSON.stringify(Array.from(hintsUsed)),
               invalid: JSON.stringify(invalidPositions.map(posToLineNumbers)),
               results: JSON.stringify(results.map(result => {
                 return {
-                  name: result.name,
+                  predicate: result.predicate,
                   examples: result.examples.map(posToLineNumbers)
                 };
               }))
@@ -253,6 +257,9 @@
               'Content-Type': 'application/json'
             }
           });
+
+          // Reset used hints
+          hintsUsed.clear();
         });
 
         if (toolAssignment === 'checked') {
@@ -310,10 +317,12 @@
 
           /**
            * Create a circle icon for the given predicate.
-           * @param {*} catchers List of srcloc each representing the satisfying student example
+           * @param {*} result Object containing:
+           *                   `predicate`: Name of the predicate
+           *                   `examples`: List of srclocs of examples that satisfied the predicate
            * @param {string} hint Predicate-specific hint
            */
-          function renderPredicate(catchers, hint) {
+          function renderPredicate(result, hint) {
 
             let predicate = document.createElement('a');
             predicate.setAttribute('href', '#');
@@ -321,10 +330,13 @@
             predicate.textContent = '💡';
 
             // Add hint if predicate is unsatisfied AND student is eligible for the hint
-            if (catchers.length > 0) {
+            if (result.examples.length > 0) {
               predicate.classList.add('satisfied');
             } else if (specificHintEligible) {
               predicate.addEventListener('click', e => {
+                // Note that student used hint (to be logged with next submission)
+                hintsUsed.add(result.predicate);
+
                 // Remove hinted class from other predicates
                 predicateList.querySelectorAll('.hintable').forEach(pred => {
                   if (pred !== predicate) pred.classList.remove('hinted');
@@ -351,10 +363,10 @@
 
             // Highlight on hover, remove highlight on focus loss
             predicate.addEventListener('mouseenter', function () {
-              catchers.forEach(loc => loc.highlight('#91ccec'));
+              result.examples.forEach(loc => loc.highlight('#91ccec'));
             });
             predicate.addEventListener('mouseleave', function () {
-              catchers.forEach(loc => loc.highlight(''));
+              result.examples.forEach(loc => loc.highlight(''));
             });
 
             return predicate;
@@ -362,7 +374,7 @@
 
           // Generate predicate circle icons
           let hints = predicates.map(([name, pred]) => runtime.getField(pred, "hint"));
-          results.map((result, i) => renderPredicate(result.examples, hints[i]))
+          results.map((result, i) => renderPredicate(result, hints[i]))
             .forEach(function (predicate_widget) {
               let li = document.createElement('li');
               li.appendChild(predicate_widget);
