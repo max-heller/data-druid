@@ -14,6 +14,8 @@ install:
 - npm update
 - make web
 - make deploy-cpo-main
+script:
+- echo "Build completed, deploying cpo-main.jarr to S3"
 deploy:
 - provider: s3
   access_key_id:
