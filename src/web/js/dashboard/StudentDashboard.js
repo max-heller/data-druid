@@ -179,7 +179,7 @@ class StudentDashboard extends Component {
           </div>
 
           <div className={'right'}>
-            <p><button className={'auth-button'} onClick={this.handleSignInClick} id='signin-button' >Sign in</button></p><p><em>to save and view programs</em></p>
+            <p><button className={'auth-button'} onClick={this.handleSignInClick} id='signin-button' >Sign in</button></p><p><em>Please use your Brown email!</em></p>
           </div>
 
           <div className='clearfix'></div>
