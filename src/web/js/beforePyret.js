@@ -344,7 +344,7 @@ $(function() {
   });
 
   function setTitle(progName) {
-    document.title = progName + " - Data Druid: Classroom";
+    document.title = progName + " - Data Druid";
   }
   CPO.setTitle = setTitle;
 
