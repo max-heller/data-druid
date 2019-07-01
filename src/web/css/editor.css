@@ -1924,7 +1924,7 @@ button.controller {
   color: white;
 }
 
-.playground_status_widget {
+.druid_status_widget {
   display: none;
   justify-content: center;
   flex-direction: row;
@@ -1935,7 +1935,7 @@ button.controller {
   box-shadow:inset 0px 0px 13px rgba(0,0,0,0.6);
 }
 
-.playground_status {
+.druid_status {
   flex: 1;
   position: relative;
   max-width: 50%;
@@ -1943,7 +1943,7 @@ button.controller {
   text-transform: uppercase;
 }
 
-.playground_status:not(:last-of-type)::after {
+.druid_status:not(:last-of-type)::after {
   content: '';
   display: block;
   position: absolute;

@@ -34,14 +34,14 @@
     var ffi = runtime.ffi;
 
     var output = jQuery("<div id='output' class='cm-s-default'>");
-    output.append($("<p class='predicate_info'>Playground will check your examples against a suite of instructor-written predicates that look for interesting cases.<p>"));
+    output.append($("<p class='predicate_info'>Data Druid will check your examples against a suite of instructor-written predicates that look for interesting cases.<p>"));
 
     var outputPending = jQuery("<span>").text("Gathering results...");
     var outputPendingHidden = true;
     var canShowRunningIndicator = false;
     var running = false;
 
-    // graph widget for playground results
+    // graph widget for predicate results
     // (taken from Examplar)
     class Graph {
       constructor(value) {
@@ -100,10 +100,10 @@
     class StatusWidget {
       constructor() {
         let element = document.createElement('div');
-        element.classList.add("playground_status_widget");
+        element.classList.add("druid_status_widget");
 
         let predicate_side = document.createElement('div');
-        predicate_side.classList.add("playground_status");
+        predicate_side.classList.add("druid_status");
         predicate_side.innerHTML = "Predicates<br>Satisfied";
         let predicateGraph = new Graph();
         predicate_side.prepend(predicateGraph.element);
@@ -170,6 +170,9 @@
       );
     }
 
+    // Array to store hints the student uses for each submission
+    const hintsUsed = new Set();
+
     // This predicate rendering system is based on examplar's predicate rendering
     // (https://github.com/brownplt/examplar)
     /**
@@ -179,8 +182,8 @@
      */
     function renderPredicateResults(defined, instances) {
       // Grab predicates from instructor file
-      let predicates = Object.values(defined).filter(
-        val => val.__proto__.$name === "pred");
+      let predicates = Object.entries(defined).filter(
+        ([name, val]) => val.__proto__.$name === "pred");
       let undefinedComponents = (predicates.length === 0) ? ["predicates"] : [];
 
       // Grab type checker, general hint, and hint eligibility checkers
@@ -205,9 +208,13 @@
                                       .map(sv => sv.pos);
 
       // Find the positions of data instances that satisfy each predicate
-      let results = predicates.map(predicate => {
-        return validInstances.filter(sv => runtime.getField(predicate, "f").app(sv.val))
-                    .map(sv => sv.pos);
+      let results = predicates.map(([name, predicate]) => {
+        return {
+          predicate: name,
+          examples: validInstances
+            .filter(sv => runtime.getField(predicate, "f").app(sv.val))
+            .map(sv => sv.pos)
+        };
       });
 
       function posToLineNumbers(pos) {
@@ -237,23 +244,30 @@
               assignment_id: id,
               tool: toolAssignment,
               submission: CPO.documents.get("definitions://").getValue(),
+              hints: JSON.stringify(Array.from(hintsUsed)),
               invalid: JSON.stringify(invalidPositions.map(posToLineNumbers)),
-              results: JSON.stringify(results.map(
-                catchers => catchers.map(posToLineNumbers)
-              ))
+              results: JSON.stringify(results.map(result => {
+                return {
+                  predicate: result.predicate,
+                  examples: result.examples.map(posToLineNumbers)
+                };
+              }))
             }),
             headers: {
               'Content-Type': 'application/json'
             }
           });
+
+          // Reset used hints
+          hintsUsed.clear();
         });
 
         if (toolAssignment === 'checked') {
-          $(".playground_status_widget").css('display', 'flex');
+          $(".druid_status_widget").css('display', 'flex');
         }
 
         let numPredicates = predicates.length;
-        let numSatisfied = results.filter(catchers => catchers.length > 0).length;
+        let numSatisfied = results.filter(result => result.examples.length > 0).length;
 
         // Increment stagnatedAttempts if numSatisfied did not increase
         if (numSatisfied <= lastSubmissionSatisfied) {
@@ -303,10 +317,12 @@
 
           /**
            * Create a circle icon for the given predicate.
-           * @param {*} catchers List of srcloc each representing the satisfying student example
+           * @param {*} result Object containing:
+           *                   `predicate`: Name of the predicate
+           *                   `examples`: List of srclocs of examples that satisfied the predicate
            * @param {string} hint Predicate-specific hint
            */
-          function renderPredicate(catchers, hint) {
+          function renderPredicate(result, hint) {
 
             let predicate = document.createElement('a');
             predicate.setAttribute('href', '#');
@@ -314,10 +330,13 @@
             predicate.textContent = '💡';
 
             // Add hint if predicate is unsatisfied AND student is eligible for the hint
-            if (catchers.length > 0) {
+            if (result.examples.length > 0) {
               predicate.classList.add('satisfied');
             } else if (specificHintEligible) {
               predicate.addEventListener('click', e => {
+                // Note that student used hint (to be logged with next submission)
+                hintsUsed.add(result.predicate);
+
                 // Remove hinted class from other predicates
                 predicateList.querySelectorAll('.hintable').forEach(pred => {
                   if (pred !== predicate) pred.classList.remove('hinted');
@@ -344,18 +363,18 @@
 
             // Highlight on hover, remove highlight on focus loss
             predicate.addEventListener('mouseenter', function () {
-              catchers.forEach(loc => loc.highlight('#91ccec'));
+              result.examples.forEach(loc => loc.highlight('#91ccec'));
             });
             predicate.addEventListener('mouseleave', function () {
-              catchers.forEach(loc => loc.highlight(''));
+              result.examples.forEach(loc => loc.highlight(''));
             });
 
             return predicate;
           }
 
           // Generate predicate circle icons
-          let hints = predicates.map(pred => runtime.getField(pred, "hint"));
-          results.map((catchers, i) => renderPredicate(catchers, hints[i]))
+          let hints = predicates.map(([name, pred]) => runtime.getField(pred, "hint"));
+          results.map((result, i) => renderPredicate(result, hints[i]))
             .forEach(function (predicate_widget) {
               let li = document.createElement('li');
               li.appendChild(predicate_widget);
@@ -411,7 +430,7 @@
           if (numSatisfied === numPredicates) {
             let reminder = document.createElement('p');
             // TODO: change
-            reminder.textContent = "Nice work! Remember, the set of predicates in Playground does not cover every interesting case, so keep writing examples!";
+            reminder.textContent = "Nice work! Remember, the set of predicates in Data Druid does not cover every interesting case, so keep writing examples!";
             predicateInfo.appendChild(reminder);
           }
         }
