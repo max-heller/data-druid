@@ -275,10 +275,18 @@
                   headers: {
                     'Content-Type': 'application/json'
                   }
-                }).then(function (error) { console.log(error) });
+                })
+                .then(function (res) { 
+                  console.log(res);
+                  if (res.status != 200)
+                  alert("Encountered error while logging: Server rejected request. Try refreshing the page. If this error message persists, please contact your instructor.", err);
+                })
+                .catch(function (err) {
+                  alert("Unable to contact server. Check your internet connection. If this error message persists, please contact your instructor.", err);
+                });
               })
               .catch(function (err) {
-                alert("No assignment loaded!", err);
+                alert("Encountered error while logging: Unable to send request. Try refreshing the page. If this error message persists, please contact your instructor.", err);
               });
           }
         });
