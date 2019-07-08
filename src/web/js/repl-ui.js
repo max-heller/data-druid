@@ -232,7 +232,7 @@
           toolAssignment = 'playground';
         } else {
           console.error("Student not assigned to a tool");
-          return CPO.say("Your email is not associated with this assignment, please contact your instructor");
+          return alert("Your email is not associated with this assignment, please contact your instructor");
         }
 
         // logging
