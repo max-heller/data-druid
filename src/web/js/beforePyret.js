@@ -274,6 +274,8 @@ $(function() {
         document.activeElement.blur();
         $("#bonniemenubutton").focus();
         setUsername($("#username"));
+        $(window).unbind("beforeunload");
+        window.location.reload();
         if(params["get"] && params["get"]["program"]) {
           var toLoad = api.api.getFileById(params["get"]["program"]);
           console.log("Logged in and has program to load: ", toLoad);
