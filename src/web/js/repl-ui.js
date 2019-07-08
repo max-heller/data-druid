@@ -256,10 +256,18 @@
             headers: {
               'Content-Type': 'application/json'
             }
+          }).then(function (res) { 
+            console.log(res);
+            if (res.status != 200)
+            alert("Encountered error while logging: Server rejected request. Try refreshing the page. If this error message persists, please contact your instructor.", err);
+          }).catch(function (err) {
+            alert("Unable to contact logging server. Check your internet connection. If this error message persists, please contact your instructor.", err);
           });
 
           // Reset used hints
           hintsUsed.clear();
+        }).catch(function (err) {
+          alert("Encountered error while logging: Unable to send request. Try refreshing the page. If this error message persists, please contact your instructor.", err);
         });
 
         if (toolAssignment === 'checked') {
@@ -440,6 +448,8 @@
         predicateInfo.appendChild(topLevelReminder);
 
         output.append(predicateInfo);
+      }).catch(function (err) {
+        alert("Encountered error while logging: Unable to send request. Try refreshing the page. If this error message persists, please contact your instructor.", err);
       });
     }
 
