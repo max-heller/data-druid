@@ -364,6 +364,7 @@ li.topTier > div {
 }
 
 #footer {
+  display: none;
   height: 2.5em;
   background-color: #111;
   position: fixed;
