@@ -282,7 +282,7 @@
                   alert("Encountered error while logging: Server rejected request. Try refreshing the page. If this error message persists, please contact your instructor.", err);
                 })
                 .catch(function (err) {
-                  alert("Unable to contact server. Check your internet connection. If this error message persists, please contact your instructor.", err);
+                  alert("Unable to contact logging server. Check your internet connection. If this error message persists, please contact your instructor.", err);
                 });
               })
               .catch(function (err) {
