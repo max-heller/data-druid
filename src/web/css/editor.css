@@ -457,7 +457,7 @@ div.spy-block > table > th { display: none; }
   border-radius: 3px;
 }
 
-.attempt pre {
+.attempt > pre {
   padding-left: 25px;
 }
 
