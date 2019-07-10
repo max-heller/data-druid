@@ -235,6 +235,11 @@
           return alert("Your email is not associated with this assignment, please contact your instructor");
         }
 
+        // Trim instructor comments from top of editor
+        const editorContents = CPO.documents.get("definitions://").getValue();
+        const split = editorContents.split("# DO NOT CHANGE ANYTHING ABOVE THIS LINE");
+        const studentContents = split[split.length - 1];
+
         // logging
         window.assignmentID.then(id => {
           fetch("https://us-central1-data-druid-brown.cloudfunctions.net/playground_logger", {
@@ -243,7 +248,8 @@
               student_email: email,
               assignment_id: id,
               tool: toolAssignment,
-              submission: CPO.documents.get("definitions://").getValue(),
+              submission: studentContents,
+              example_count: instances.length,
               hints: JSON.stringify(Array.from(hintsUsed)),
               invalid: JSON.stringify(invalidPositions.map(posToLineNumbers)),
               results: JSON.stringify(results.map(result => {
@@ -256,7 +262,7 @@
             headers: {
               'Content-Type': 'application/json'
             }
-          }).then(function (res) { 
+          }).then(function (res) {
             console.log(res);
             if (res.status != 200)
             alert("Encountered error while logging: Server rejected request. Try refreshing the page. If this error message persists, please contact your instructor.", err);
