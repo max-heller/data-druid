@@ -450,7 +450,8 @@
         }
 
         const topLevelReminder = document.createElement('p');
-        topLevelReminder.innerText = `Found ${instances.length} data example(s). If you think this number should be higher, make sure to write your examples such that they would show up in the interactions window when run in code.pyret.org. If you have examples bound to names, write the names at top level in the editor.`;
+        topLevelReminder.innerHTML = `<b>Found ${instances.length} data example(s).</b> If you think this number should be higher, make sure to write your examples such that they would show up in the interactions window when run in code.pyret.org. If you have examples bound to names, write the names at top level in the editor.`;
+        if (instances.length === 0) topLevelReminder.style.color ='yellow';
         predicateInfo.appendChild(topLevelReminder);
 
         output.append(predicateInfo);
