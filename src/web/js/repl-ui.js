@@ -119,6 +119,9 @@
 
     var RUNNING_SPINWHEEL_DELAY_MS = 1000;
 
+    // Debug mode
+    let debugMode = false;
+
     // Student data instances from definitions pane
     let studentInstances = [];
 
@@ -230,6 +233,10 @@
           toolAssignment = 'checked';
         } else if (window.studentToolAssignments.playground.includes(email)) {
           toolAssignment = 'playground';
+        } else if (window.studentToolAssignments.instructor && 
+            window.studentToolAssignments.instructor.includes(email)) {
+          debugMode = true;
+          toolAssignment = 'checked';
         } else {
           console.error("Student not assigned to a tool");
           return alert("Your email is not associated with this assignment, please contact your instructor");
@@ -239,6 +246,22 @@
         const editorContents = CPO.documents.get("definitions://").getValue();
         const split = editorContents.split("# DO NOT CHANGE ANYTHING ABOVE THIS LINE");
         const studentContents = split[split.length - 1];
+
+        // Grab line numbers for satisfying examples
+        const resultsWithPos = results.map(result => {
+          return {
+            predicate: result.predicate,
+            examples: result.examples.map(posToLineNumbers)
+          };
+        })
+
+        // debug reporting (if debugMode is true)
+        if (debugMode) {
+          console.log("Successfully ran last submission in debug mode.")
+          console.log(`Found ${instances.length} examples (${invalidPositions.length} marked invalid).`);
+          console.log("Logging predicate results... ");
+          console.dir(resultsWithPos);
+        }
 
         // logging
         window.assignmentID.then(id => {
@@ -252,12 +275,7 @@
               example_count: instances.length,
               hints: JSON.stringify(Array.from(hintsUsed)),
               invalid: JSON.stringify(invalidPositions.map(posToLineNumbers)),
-              results: JSON.stringify(results.map(result => {
-                return {
-                  predicate: result.predicate,
-                  examples: result.examples.map(posToLineNumbers)
-                };
-              }))
+              results: JSON.stringify(resultsWithPos)
             }),
             headers: {
               'Content-Type': 'application/json'
