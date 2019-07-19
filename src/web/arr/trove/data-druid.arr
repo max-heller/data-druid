@@ -90,7 +90,7 @@ end
 
 fun feedback(attempt :: Attempt) -> ED.ErrorDisplay:
   cases(Attempt) attempt:
-    | correct => [ED.para: ED.text("Good job!")]
+    | correct => [ED.para: ED.text("Correct!")]
     | neutral => [ED.para: ]
     | incorrect => [ED.para: ED.text("Incorrect, try again.")]
     | pyret-error => [ED.para: ED.text("Encountered Pyret error(s), try again.")]
