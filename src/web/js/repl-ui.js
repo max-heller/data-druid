@@ -264,7 +264,7 @@
             Q.all([window.assignment_id, window.user])
               .then(function ([assignment_id, email]) {
                 fetch("https://us-central1-data-druid-brown.cloudfunctions.net/classroom_logger", {
-                  method: 'PUT',
+                  method: 'POST',
                   body: JSON.stringify({
                     student_email: email,
                     assignment_id: assignment_id,
@@ -276,7 +276,7 @@
                     'Content-Type': 'application/json'
                   }
                 })
-                .then(function (res) { 
+                .then(function (res) {
                   console.log(res);
                   if (res.status != 200)
                   alert("Encountered error while logging: Server rejected request. Try refreshing the page. If this error message persists, please contact your instructor.", err);
