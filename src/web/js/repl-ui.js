@@ -233,7 +233,7 @@
           toolAssignment = 'checked';
         } else if (window.studentToolAssignments.playground.includes(email)) {
           toolAssignment = 'playground';
-        } else if (window.studentToolAssignments.instructor && 
+        } else if (window.studentToolAssignments.instructor &&
             window.studentToolAssignments.instructor.includes(email)) {
           debugMode = true;
           toolAssignment = 'checked';
@@ -266,7 +266,7 @@
         // logging
         window.assignmentID.then(id => {
           fetch("https://us-central1-data-druid-brown.cloudfunctions.net/playground_logger", {
-            method: 'PUT',
+            method: 'POST',
             body: JSON.stringify({
               student_email: email,
               assignment_id: id,
