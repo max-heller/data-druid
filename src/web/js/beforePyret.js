@@ -524,7 +524,9 @@ $(function() {
 
   var programToSave = initialProgram;
 
+  // Assignment ID from CPO share
   window.assignment_id = programToSave.then(function (p) { return p.getUniqueId(); });
+  // Email of logged in user
   window.user = storageAPI.then(api => api.about()).then(about => about.user.emailAddress);
 
   function showShareContainer(p) {

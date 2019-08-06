@@ -157,6 +157,7 @@ requirejs(["pyret-base/js/runtime", "pyret-base/js/post-load-hooks", "pyret-base
         $("#runDropdown").attr("disabled", false);
         clearInterval($("#loader").data("intervalID"));
         CPO.isReady = true;
+        // Hide loader if user is logged in
         window.user.then(email => {
           $("#loader").hide();
           CPO.say('Pyret loaded and ready.');

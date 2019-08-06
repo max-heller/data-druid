@@ -39,7 +39,7 @@
     var canShowRunningIndicator = false;
     var running = false;
 
-    // for data-druid logging
+    // text entered in previous repl line (for data-druid logging)
     var rawInput = "";
 
     var RUNNING_SPINWHEEL_DELAY_MS = 1000;
@@ -178,7 +178,10 @@
                     console.log("Time to run compiled program:", JSON.stringify(runResult.stats));
                     if(rr.isSuccessResult(runResult)) {
                       return rr.safeCall(function() {
+                          // Function to check if value produced by repl satisfies
+                          // the current prompt
                           let hook = rr.getField(rr.modules["definitions://"], "defined-values")["repl-hook"];
+                          // Value produced by repl from the raw text inputted by student
                           let answer = rr.getField(runResult.result, "answer");
                           return hook.app(answer);
                       }, function(prompt) {
@@ -235,11 +238,15 @@
           let task;
           let attemptResult;
           rr.runThunk(function() {
+            // Thunk to get result of current attempt (e.g. correct, pyret-error, incorrect)
             let getCurrentAttempt = rr.getField(rr.modules["definitions://"], "defined-values")["get-current-attempt"];
+            // Thunk to get current task
             let getCurrentTask = rr.getField(rr.modules["definitions://"], "defined-values")["get-current-task"];
             return rr.safeCall(function(){
               attemptResult = getCurrentAttempt.app().$name;
               task = getCurrentTask.app();
+              // Render prompt with class indicating result of previous attempt
+              // e.g. `attempt-incorrect`, `attempt-correct`
               return renderAndDisplayError(rr, task,
                   null, false, null, "check-block check-block-failed attempt attempt-" + attemptResult);
               }, function(result) {
@@ -257,6 +264,7 @@
           });
           // logging:
           if (rawInput != "") {
+            // Get id of current task (assigned in sequential order)
             let task_id = rr.getField(rr.getField(task, "t"), "id");
             // If answer was correct, task list will have advanced by this point,
             // so we need to look for the "previous" task id
@@ -467,6 +475,7 @@
       }
       promptContainer.append(prompt);
 
+      // Render button to mark task as impossible
       let impossibleButton = document.createElement("button");
       impossibleButton.id = "impossibleButton";
       impossibleButton.innerText = "Impossible";

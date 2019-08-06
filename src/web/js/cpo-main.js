@@ -459,6 +459,7 @@
 
       $( "#REPL" ).on( "resizestop", toPercent);
 
+      // Hide editor (instructor script lives there)
       var rightResizePct = 100;
       var leftResizePct = 0;
 
@@ -477,12 +478,13 @@
         $( "#REPL" ).css( "width", rightPct + "%");
         $( "#REPL" ).css( "left", leftPct + "%");
         $(".replMain").css("width", leftPct + "%");
+        // Show resize handle if editor is visible
         if (leftPct == "0") $("#handle").css("display", "none");
         else $("#handle").css("display", "block");
       }
 
+      // Toggleable mode to display editor contents (for modifying assignment in-place)
       var devMode = true;
-
       window.toggleDevMode = function() {
         if (devMode) {
           devMode = false;
@@ -498,7 +500,6 @@
           setEditorSize(50, 50);
         }
       }
-
       window.toggleDevMode();
 
       // save

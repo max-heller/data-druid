@@ -37,6 +37,7 @@
 
     var converter = $.colorspaces.converter('CIELAB', 'hex');
 
+    // Markdown renderer for Druid prompts
     const markdownConverter = new showdown.Converter();
     markdownConverter.setFlavor('github');
     const markdownPrefix = "markdown://";
@@ -961,6 +962,7 @@
             }, "optional: help(contents)");
           },
           "text": function(txt) {
+            // Render as markdown if text is prefixed with `markdown://`
             if (txt.startsWith(markdownPrefix)) {
               return markdownConverter.makeHtml(txt.slice(markdownPrefix.length));
             } else {
@@ -1229,7 +1231,7 @@
       renderers["cyclic"] = function renderCyclic(val) {
         return renderText(sooper(renderers, "cyclic", val));
       };
-      
+
       renderers["tree"] = function renderCyclic(val, pushTodo) {
         console.log("TREE", val);
         var vals = [];
@@ -1634,7 +1636,7 @@
         graph.setDefaultEdgeLabel(function() { return {}; });
 
         let invisible = {shape: 'circle', label: "", style: "stroke:none; fill:none; opacity: 0;"}
-        
+
         function render(tree, parentNode) {
           let id = nodeID++;
           return runtime.ffi.cases(runtime.getField(TREE, "is-Tree"), "Tree", tree, {
@@ -1669,7 +1671,7 @@
 
         // FIX: this causes a momentary flash of visibility
         // but without it things are sized incorrectly.
-        // I have no idea why. :( 
+        // I have no idea why. :(
         document.getElementById("offscreen").appendChild(canvas);
 
         new dagreD3.render()(d3.select(group),graph);
@@ -1712,7 +1714,7 @@
           e.stopPropagation();
         });
 
-        
+
 
 
         return canvas;
