@@ -188,7 +188,7 @@ To deploy an assignment:
 
 ### Assignment File Specifications
 
-Prompted uses a single Pyret source file for assignments, and expects certain named variables to be present in the file. A template file can be found in **[FILEPATH]**. 
+Prompted uses a single Pyret source file for assignments, and expects certain named variables to be present in the file. A template file, `instructor-template.arr`, is provided for convenience. 
 
 Description of required variables in the source `.arr` file:
 
