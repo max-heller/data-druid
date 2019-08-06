@@ -1,0 +1,10 @@
+{
+    "playground": [
+	"john_smith@brown.edu"],
+    "checked": [
+	"jane_doe@brown.edu"
+    ],
+    "instructor": [
+    "teacher@brown.edu"
+    ]
+}

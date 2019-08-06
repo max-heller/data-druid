@@ -163,3 +163,108 @@ If you are doing development on Data Druid, it can be useful to run it on a remo
 
 6.	Run `heroku open` or visit appname.herokuapp.com.
 7.  Tips for redeploy: if you don't see a successful build under heroku webiste's activity tab, but get "everything is up-to-date" when you run `git push heroku <localbranch>:master`, or your build doesn't look up-to-date, you can do an empty commit: `git commit --allow-empty -m "force deploy"`
+
+## Writing Assignments for Unprompted
+
+Unprompted assignments are deployed using Google Drive's sharing features. Each assignment requires a Google Drive folder that contains all the required source files:
+
+- `predicates.arr`
+- `students.json`
+- A template `.arr` file ending in `examples.arr`
+
+See the folder `instructor-template` for a full sample folder and files.
+
+### Deployment
+
+To deploy an assignment, obtain the assignment's Google Drive folder ID:
+
+1. In Google Drive, right-click on the folder and click "Get sharable link".
+
+2. Copy the URL that is provided. Link sharing may need to be turned on.
+
+3. The folder ID is the text immediately following `id=` in this URL. I.e., the link will look like this: `https://drive.google.com/open?id=<ID HERE>`
+
+With the assignment's GDrive folder ID, the following URL will be a working link to the assignment (replace `Unprompted Domain` with the working domain for Unprompted):
+
+```
+https://<Unprompted Domain>/editor#template=<Assignment Folder ID>
+```
+
+Loading up the assignment will automatically create a file for the student with the same name as the template file. If such a file has already been created, it will be loaded up automatically.
+
+*Note that users will need to log into Unprompted using a Brown email to use this module.*
+
+### Assignment File Specifications
+
+#### predicates.arr
+
+This file contains all predicates and hints. Unprompted will expect certain named functions and variables to be present in the file. 
+
+Description of required components in this file:
+
+| Component | Type | Description |
+| --------- | ---- | ----------- |
+| `type-checker` | `(Any -> Boolean)` | Checks if an instance is considered valid for ths assignment. Should only return `true` for instances that are the correct data-type (or satisfy certain parameters). |
+| `general-hint` | `String` | A general hint that is provided to students after certain criteria is met (See `is-general-hint-eligible`). |
+| `is-general-hint-eligible` | `(Number, Number, Number -> Boolean)` | Checks if a student should be offered a general hint. *See **Hint Criteria** for information in parameters.* |
+| `is-specific-hint-eligible` | `(Number, Number, Number -> Boolean)` | Checks if a student should be offered a specific hint for a predicate. *See **Hint Criteria** for information in parameters.* |
+
+
+The following lines are required at the top of the source `.arr` file:
+
+```
+provide *
+include shared-gdrive("playground.arr", "1sRD4hBi-TP9j_FBCg5ZZxo50rcUqFOR1")
+```
+
+##### Predicates
+
+Predicates are written as `Predicate` instances at the top level of the `predicates.arr` file. Below is the data definition of `Predicate`:
+
+```
+data Predicate:
+  | pred(f :: (Any -> Boolean), hint :: String)
+end
+```
+
+The function component of `Predicate` is a Boolean function that is individually on student inputs. This function should only return `true` on student instances that satisfy the predicate.
+
+The `hint` component is a `String` that will be displayed as a text hint for a specific predicate when hint criteria is met.
+
+##### Hint Criteria
+
+The conditions that are required for a user to be eligible for hints can be defined using any of the following parameters:
+
+- `stagnated-attempts`: The number of attempts where the number of satisfied predicates has not increased.
+
+- `num-predicates`: The total number of predicates.
+
+- `num-satisfied-predicates`: The number of satisfied predicates.
+
+#### students.json
+
+This JSON describes which version of Prompted users will see. Identification of users is accomplished through the Google API, and thus uses user email. The file must have the following fields:
+
+1. `playground`: Predicate satisfaction is not displayed to these users. Invalid data instances will still be flagged.
+
+2. `checked`: These users will see predicate satisfaction and invalid data instance flagging.
+
+Additionally, an optional `instructor` field can be included. These users will be provided the `checked` module in dev mode, where specific predicate satisfaction information is printed to the console for debugging.
+
+#### Template File
+
+This file will be loaded up as a template for users. The name of this file should end in `examples.arr` (e.g., `weather-tables-examples.arr`).
+
+There are two required components of this file. First is the following import line exactly as is:
+
+```
+include my-gdrive("assignment")
+```
+
+Second is this exact commented line:
+
+```
+# DO NOT CHANGE ANYTHING ABOVE THIS LINE
+```
+
+The module will prevent users from editing any text above and including this comment line. Since Unprompted requires the above dummy import line in order to correctly load predicates, it is important that users are not able to edit or accidentally delete that import.
