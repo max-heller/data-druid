@@ -14,7 +14,6 @@ include option
 
 ################## DEFINITIONS
 
-
 ## CHOICE (FOR STUDENT RESPONSES)
 
 data Choice:
@@ -84,11 +83,13 @@ fun make-instructor-defn(
     line-end :: Number,
     char-end :: Number)
   -> ED.ErrorDisplay:
+  doc: "Returns an ErrorDisplay embedded code object for code at the given location"
   ED.cmcode(S.srcloc("definitions://",
       line-start, char-start, 0, line-end, char-end, 0))
 end
 
 fun feedback(attempt :: Attempt) -> ED.ErrorDisplay:
+  doc: "Takes in a attempt result and outputs the ErrorDisplay to render"
   cases(Attempt) attempt:
     | correct => [ED.para: ED.text("Correct!")]
     | neutral => [ED.para: ]
@@ -173,16 +174,22 @@ fun get-task-list(
 end
 
 fun make-funs(s :: State) -> {(-> Attempt); (-> Annotated); (Any -> Nothing)}:
+  doc: "Generates a tuple of get functions for Prompted"
+
+  # Function that returns the current attempt
   get-current-attempt = lam() -> Attempt:
     s!attempt
   end
 
+  # Function that returns an Annotated object containing the current task
   get-current-task = lam() -> Annotated block:
     current-attempt = s!attempt
     s!{attempt: pyret-error}
     annotated-task(feedback(current-attempt), s!tasks.first)
   end
 
+  # Function that runs the current predicate against student input
+  # and advances the task list
   repl-hook = lam(value):
     cases(List) s!tasks:
       | link(t, rest) =>

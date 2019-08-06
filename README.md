@@ -163,3 +163,126 @@ If you are doing development on Data Druid, it can be useful to run it on a remo
 
 6.	Run `heroku open` or visit appname.herokuapp.com.
 7.  Tips for redeploy: if you don't see a successful build under heroku webiste's activity tab, but get "everything is up-to-date" when you run `git push heroku <localbranch>:master`, or your build doesn't look up-to-date, you can do an empty commit: `git commit --allow-empty -m "force deploy"`
+
+## Writing Assignments for Prompted
+
+Prompted assignments are deployed using code.pyret.org's program sharing tool (through Google Drive). 
+
+A single source file is required and can be written directly in Prompted by displaying the editor in dev mode. Dev mode can be activated in any instance of Prompted using the following web console command:
+
+```
+toggleDevMode()
+```
+
+### Deployment
+
+To deploy an assignment:
+
+1. Open the assignment `.arr` file in Prompted and activate dev mode using `toggleDevMode()`.
+
+2. Save the file and hit the `Publish` button. The URL provided will be a working link to the assignment (you may need to hit `Publish` again to view the link). 
+
+3. If any changes are made to the file, the shared version can be updated by clicking `Publish` and then `Update`. 
+
+*Note that users will need to log into Prompted using a Brown email to use this module.*
+
+### Assignment File Specifications
+
+Prompted uses a single Pyret source file for assignments, and expects certain named variables to be present in the file. A template file can be found in **[FILEPATH]**. 
+
+Description of required variables in the source `.arr` file:
+
+| Component | Type | Description |
+| --------- | ---- | ----------- |
+| `opening-prompt` | `Any` | Contains the description to render in the first prompt. *See the **Prompt Rendering** section below.* |
+| `task-list` | `List<Any; (Any -> Boolean)>` | A list of tuples containing the prompts and predicates for each task. The first element of each tuple contains the prompt to render (*See the **Prompt Rendering** section below.*), and the second provides a predicate that student answers are checked against. Student submissions will only be considered 'correct' if this predicate returns `true`. |
+| `closing-prompt` | `Any` | Contains the description to render in the first prompt. *See the **Prompt Rendering** section below.* |
+| `defn-start` | `Number` | Describes the line number that the instructor-provided definition begins on. |
+| `defn-char-start` | `Number` | Describes the index of the character on the provided line where the instructor-provided definition starts (this value will probably be 0). | 
+| `defn-end` | `Number` | Describes the line number that the instructor-provided definition ends on. |
+| `defn-char-end` | `Number` | Describes the index of the character on the provided line where the instructor-provided definition ends (recommended to choose an arbitrarily large number for this). |
+
+The following import line is *required* in the source `.arr` file. However, since the `data-druid` module is specific to Prompted, this line will throw an error if you attempt to run Prompted source files in `code.pyret.org`.
+
+```
+include data-druid
+```
+
+The following code is required in the source `.arr` file as well (it is included at the end of the provided template file):
+
+```
+instructor-defn =
+  make-instructor-defn(defn-start, defn-char-start, defn-end, defn-char-end)
+
+tasks =
+  get-task-list(task-list, opening-prompt, closing-prompt, some(instructor-defn))
+
+session = state(neutral, tasks)
+funs = make-funs(session)
+get-current-attempt = funs.{0}
+get-current-task = funs.{1}
+repl-hook = funs.{2}  
+```
+
+#### Prompt Rendering
+
+Prompts can be provided to the module as either a `String`, a `List<Any>`, or any other data type. 
+
+If a single object is provided, it is rendered as such:
+
+- A `String` is rendered as text with Markdown support
+- An `ErrorDisplay` object is rendered directly using code.pyret.org's error rendering. This is mostly used for code embedding.
+- Any other `Pyret` object is embedded directly into the prompt using code.pyret.org's fancy object rendering, the same way `Pyret` objects are rendered in the REPL.
+
+If a `List<Any>` is provided, each element is individually rendered as above.
+
+#### The Impossible Button
+
+Prompted provides an `impossible` enum that can be used to build prompts that students should identify as impossible to complete. Prompts can be written to check for the `impossible` value as such:
+
+```
+{"prompt text"; _ == impossible}
+```
+
+Prompted will render a clickable `impossible` button next to each input line for every task for convenience.
+
+#### Value Skeleton Hiding
+
+This feature is actually built into code.pyret.org, but instructors may find it helpful for writing certain tasks. It allows instructors to write data structures that hide their contents when displayed on the REPL. 
+
+This can be especially helpful when writing tasks that ask students to retrieve information from a data structure (e.g., "get the `name` field from a `Person` object") to prevent students from cheating (typing the answer directly into the input line).
+
+To use, import the following module:
+
+```
+import valueskeleton as VS
+```
+
+And add the following method to the data structure that should render hidden:
+
+```
+sharing:
+  method _output(self):
+    VS.vs-str("Output intentionally hidden.")
+  end
+```
+
+*Note that `VS.vs-str("Output intentionally hidden.")` can be replaced with `VS.vs-seq(empty)` to display nothing, or any other valid `valueskeleton` rendering object.*
+
+This method of hiding output will hide the output of *every* instance of the data structure. To maintain consistency of expected Pyret behavior for students, it is recommended that the primary data definition be left as-is and a new data definition be made for instances that need to be hidden. 
+
+For example, if students are working with a `Person` datatype, this definition would be provided for students to work with:
+
+```
+data Person:
+  | person(name :: String, age :: Number)
+end
+```
+
+And this definition would be used to make `Person` objects that have hidden values:
+
+```
+data Person2:
+  | person2(name :: String, age :: Number)
+end
+```
