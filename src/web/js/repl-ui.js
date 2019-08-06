@@ -406,6 +406,7 @@
 
           // Generate predicate circle icons
           let hints = predicates.map(([name, pred]) => runtime.getField(pred, "hint"));
+          if (hints.some(hint => hint == "")) alert("One or more predicates have empty hints!");
           results.map((result, i) => renderPredicate(result, hints[i]))
             .forEach(function (predicate_widget) {
               let li = document.createElement('li');
