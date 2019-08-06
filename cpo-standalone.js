@@ -56,7 +56,7 @@ requirejs(["pyret-base/js/runtime", "pyret-base/js/post-load-hooks", "pyret-base
   postLoadHooks["builtin://cpo-builtins"] = function(_) {
     // NOTE(joe): At this point, all the builtin modules are for sure loaded
     // (like image, world, etc)
-    
+
     var reactors = gf(gf(realm.instantiated["builtin://reactors"], "provide-plus-types"), "internal");
     var world = gf(gf(realm.instantiated["builtin://world"], "provide-plus-types"), "internal");
     reactors.setInteract(world.bigBangFromDict);
@@ -111,14 +111,14 @@ requirejs(["pyret-base/js/runtime", "pyret-base/js/post-load-hooks", "pyret-base
             console.error("Stack:\n" + JSON.stringify(exnStack));
             console.error("Pyret stack:\n" + execRt.printPyretStack(pyretStack, true));
             // process.exit(EXIT_ERROR_RENDERING_ERROR);
-          } else {            
+          } else {
             execRt.runThunk(
               function() {
                 return gf(gf(rendererror, "values"), "display-to-string").app(
                   reasonResult.result,
                   execRt.namespace.get("torepr"),
                   execRt.ffi.makeList(res.exn.pyretStack.map(execRt.makeSrcloc)));
-              }, 
+              },
               function(printResult) {
                 if (execRt.isSuccessResult(printResult)) {
                   console.error(printResult.result);
@@ -131,7 +131,7 @@ requirejs(["pyret-base/js/runtime", "pyret-base/js/post-load-hooks", "pyret-base
                   console.error("Stack:\n" + JSON.stringify(exnStack));
                   console.error("Pyret stack:\n" + execRt.printPyretStack(pyretStack, true));
                   // process.exit(EXIT_ERROR_DISPLAYING_ERROR);
-                }                  
+                }
               }, "errordisplay->to-string");
           }
         }, "error->display");
@@ -156,6 +156,7 @@ requirejs(["pyret-base/js/runtime", "pyret-base/js/post-load-hooks", "pyret-base
         $("#runButton").attr("disabled", false);
         $("#runDropdown").attr("disabled", false);
         clearInterval($("#loader").data("intervalID"));
+        // Hide loader if user is logged in
         if ($("#username").text() !== "guest") {
           $("#loader").hide();
         } else {

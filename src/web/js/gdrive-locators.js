@@ -51,6 +51,7 @@ define("cpo/gdrive-locators", [], function() {
         return "Could not load file with name " + filename;
       }
 
+      // Data Druid: Replace `include my-gdrive("assignment") with actual import
       if (filename === 'assignment') {
         return makeSharedGDriveLocator("predicates.arr", window.predicateFileId);
       }

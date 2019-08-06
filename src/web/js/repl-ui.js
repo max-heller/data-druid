@@ -176,7 +176,7 @@
     // Array to store hints the student uses for each submission
     const hintsUsed = new Set();
 
-    // This predicate rendering system is based on examplar's predicate rendering
+    // This predicate rendering system is based on examplar's chaff rendering
     // (https://github.com/brownplt/examplar)
     /**
      * Generates results pane.
@@ -187,9 +187,10 @@
       // Grab predicates from instructor file
       let predicates = Object.entries(defined).filter(
         ([name, val]) => val.__proto__.$name === "pred");
-      let undefinedComponents = (predicates.length === 0) ? ["predicates"] : [];
 
       // Grab type checker, general hint, and hint eligibility checkers
+      // Alert instructor if one or more components are missing
+      let undefinedComponents = (predicates.length === 0) ? ["predicates"] : [];
       let typeChecker = defined["type-checker"];
       if (!typeChecker) undefinedComponents.push("data instance type checker");
       let generalHint = defined["general-hint"];
@@ -204,8 +205,8 @@
         return;
       }
 
-      // Split data instances into those that do and don't pass the assignment's type checker
-      // TODO: optimize using a reduce that produces two arrays
+      // Split data instances into those that do and don't pass the assignment's
+      // "type checker"/well-formedness checker for examples
       let validInstances = instances.filter(sv => typeChecker.app(sv.val));
       let invalidPositions = instances.filter(sv => !typeChecker.app(sv.val))
                                       .map(sv => sv.pos);
@@ -220,6 +221,7 @@
         };
       });
 
+      /* Convert Pyret's Position to a simpler representation */
       function posToLineNumbers(pos) {
         return {
           top_ln: pos.from.line,
@@ -228,6 +230,10 @@
       }
 
       window.user.then(email => {
+        // Determine whether user is assigned to checked
+        // or playground version of the assignment
+        // Instructors are assigned to checked and have debug mode enabled,
+        // which prints extra information in the console during runs
         let toolAssignment;
         if (window.studentToolAssignments.checked.includes(email)) {
           toolAssignment = 'checked';
@@ -294,10 +300,12 @@
           alert("Encountered error while logging: Unable to send request. Try refreshing the page. If this error message persists, please contact your instructor.", err);
         });
 
+        // Display predicate widgets if in checked mode
         if (toolAssignment === 'checked') {
           $(".druid_status_widget").css('display', 'flex');
         }
 
+        // Determine number of (satisfied) predicates
         let numPredicates = predicates.length;
         let numSatisfied = results.filter(result => result.examples.length > 0).length;
 
@@ -329,8 +337,6 @@
           };
 
           let intro = document.createElement('p');
-          // TODO: change to a more appropriate message
-          // E.g., "You found X of the Y interesting cases."
           intro.textContent = `You satisfied ${numSatisfied} out of ${numPredicates} predicates:`;
           predicateInfo.appendChild(intro);
 
@@ -348,10 +354,10 @@
             isSpecificHintEligible.app(stagnatedAttempts, numPredicates, numSatisfied);
 
           /**
-           * Create a circle icon for the given predicate.
-           * @param {*} result Object containing:
-           *                   `predicate`: Name of the predicate
-           *                   `examples`: List of srclocs of examples that satisfied the predicate
+           * Create a circular widget for the given predicate.
+           * @param {Object} result Object containing:
+           *        `predicate`: Name of the predicate
+           *        `examples`: List of srclocs of examples that satisfied the predicate
            * @param {string} hint Predicate-specific hint
            */
           function renderPredicate(result, hint) {
@@ -417,7 +423,6 @@
           predicateInfo.appendChild(predicateListContainer);
 
           let outro = document.createElement('p');
-          // TODO: change to something more appropriate
           outro.textContent = "The predicates you satisfied are highlighted above in blue. Mouseover a predicate to see which of your examples satisfied it.";
           predicateInfo.appendChild(outro);
 
@@ -460,14 +465,15 @@
             predicateInfo.append(generalHintDiv, generalHintText);
           }
 
+          // Congratulate user if they satisfied all of the predicates
           if (numSatisfied === numPredicates) {
             let reminder = document.createElement('p');
-            // TODO: change
             reminder.textContent = "Nice work! Remember, the set of predicates in Data Druid does not cover every interesting case, so keep writing examples!";
             predicateInfo.appendChild(reminder);
           }
         }
 
+        // Display notice with number of examples found
         const topLevelReminder = document.createElement('p');
         topLevelReminder.innerHTML = `<b>Found ${instances.length} data example(s).</b> If you think this number should be higher, make sure to write your examples such that they would show up in the interactions window when run in code.pyret.org. If you have examples bound to names, write the names at top level in the editor.`;
         if (instances.length === 0) topLevelReminder.style.color ='yellow';
@@ -568,6 +574,7 @@
                       let defined = rr.getField(rr.modules[predicateModuleName], "defined-values");
 
                       return rr.safeCall(function() {
+                        // Compute results, log, and render predicate pane
                         return renderPredicateResults(defined, instances);
                       }, function(_) {
                         outputPending.remove();
@@ -940,6 +947,7 @@
             return repl.runtime.toReprJS(val, repl.runtime.ReprMethods["$cpo"]);
           }, function(container) {
             if (repl.runtime.isSuccessResult(container)) {
+              // Data Druid: found an example, add it to the list
               let pos = outputUI.Position.fromSrcArray(loc, CPO.documents, {});
               studentInstances.push({val: val, pos: pos});
             } else {
@@ -980,7 +988,6 @@
                           // if this becomes a check box somewhere in CPO
         };
 
-        // TODO: logging and/or injection?
         var replResult = repl.restartInteractions(src, options);
         var startRendering = replResult.then(function(r) {
           maybeShowOutputPending();

@@ -361,9 +361,9 @@ $(function() {
   window.programLoaded = programLoaded;
 
   var programToSave = programLoaded.then(function(){ return initialProgram });
-
+  // ID of the GDrive folder of the assignment
   window.assignmentID = programToSave.then(function(p) { return p.getAssignment() });
-
+  // Email of logged in user
   window.user = storageAPI.then(api => api.about()).then(about => about.user.emailAddress);
 
   function showShareContainer(p) {
