@@ -1,20 +1,15 @@
-[![Build Status](https://travis-ci.org/brownplt/code.pyret.org.svg)](https://travis-ci.org/brownplt/code.pyret.org)
+[![Build Status](https://travis-ci.com/mxheller/code.pyret.org.svg?branch=playground)](https://travis-ci.com/mxheller/code.pyret.org)
 
-# code.pyret.org
+# Data Druid: Unprompted
 
-## Simple Configuration
+This README is inspired by https://github.com/brownplt/code.pyret.org
 
-Configuration is controlled through a file called `.env` in the base
-directory.  This jives with how Heroku manages configuration variables;
-everything in `.env` is just an environment variable if you really want to
-manage things yourself, but using Heroku tools makes sure you run like things
-do in production.
+## Running Locally
 
-First, get the [Heroku toolbelt](https://toolbelt.heroku.com/).
+### First Steps
 
-Then, copy `.env.example` to `.env`.  If all you want to do is run Pyret code
-and test out the REPL, you only need to edit a few variables.  If you want to
-use the standalone pyret that comes with the checkout, you can just set
+Copy `.env.example` to `.env`.  If you want to
+use the standalone pyret that comes with the checkout, set
 
 ```
 PYRET="http://localhost:5000/js/cpo-main.jarr"
@@ -30,24 +25,7 @@ $ npm run build
 
 and the dependencies will be installed.
 
-To run the server (you can let it running in a separate tab --
-it doesn't need to be terminated across builds), run:
-
-```
-$ npm start
-```
-
-The editor will be served from `http://localhost:5000/editor`.
-
-If you edit JavaScript or HTML files in `src/web`, run
-
-```
-$ npm run build
-```
-
-and then refresh the page.
-
-## Running with Development Pyret
+### Running with Development Pyret
 
 If you'd like to run with a development copy of Pyret, you can simply symlink
 `pyret` elsewhere.  For example, if your development environment has
@@ -58,12 +36,10 @@ could just run this from the CPO directory:
 $ ln -s ../pyret-lang pyret
 ```
 
-## Configuration with Google Auth and Storage
+### Configuration with Google Auth and Storage
 
-In order to have share links, saving, and other docs-related functionality
-work, you need to add to your `.env` a Google client secret, a client ID, a
-browser API key, and a server API key.  You'll copy
-`.env.example` to `.env`, and populate several from your dashboard at Google.
+In order to sign in to Druid with Google, which is required to use the tool, you need to add to your `.env` a Google client secret, a client ID, a
+browser API key, a server API key, and a Heroku Redis URI.
 
 At https://console.developers.google.com/project, make a project, then:
 
@@ -83,99 +59,107 @@ At https://console.developers.google.com/project, make a project, then:
 
   Again, you should use `http://localhost:5000` as the referer for development.
 
-## Testing with Selenium
+Create a Heroku account at https://heroku.com, then:
 
-There are tests in `test-util/` and `test/` that use Selenium to script a
-browser.
+1. Make a new app at https://dashboard.heroku.com.
 
-The instructions for setting up Selenium to open Chrome locally are somewhat
-platform-specific.  You will need
-[chromedriver](https://sites.google.com/a/chromium.org/chromedriver/) to be on
-your path.  Then run running:
+2. Under your app's resources tab, search for `Heroku Redis` and click `Provision` in the menu that pops up.
 
-```
-npm install selenium-webdriver mocha
-npm run mocha
-```
+3. Click on the `Heroku Redis` link under your add-ons and then the `View Credentials` button.
 
-with Selenium and mocha installed and a development server running.  You can
-refine this with, e.g.
+4. Copy the `URI` and use it for the environment variable `REDISCLOUD_URL`.
 
-```
-npm run mocha -- -g "errors"
-```
+    *Note:* As the credentials page mentions, **this URI is not permanent**.
+    If you're running the tool on heroku, as in production, it will update itself automatically, but if you're running the tool locally **you will need to occasionally update the URI with the latest from Heroku**.
 
-to only run the tests in `test/errors.js`.  (The extra `--` are to escape the
-portion of the options to pass to the underlying `mocha` command).
+### Starting the server
 
-Another options to run all the tests on Sauce Labs (https://saucelabs.com).
-You can also get a personal free account with unlimited testing if you only
-test open-source stuff (which Pyret/CPO are).  Sauce also stores screencasts
-and logs of your tests, which can be helpful with debugging.
-
-First, add your sauce username and access key (from your account page at
-Sauce) to `.env`:
+To run the server (you can let it running in a separate tab --
+it doesn't need to be terminated across builds), run:
 
 ```
-SAUCE_USERNAME="gibbs"
-SAUCE_ACCESS_KEY="deadbeef-2671-11e5-a6a1-206a8a0824be"
+$ npm start
 ```
 
-(Not my real access key)
+The editor will be served from `http://localhost:5000/editor`.
 
-Second, install the Sauce Connect client for your system from
-https://docs.saucelabs.com/reference/sauce-connect/.  Follow the instructions
-for starting the server (the default configuration should work fine), using
-the same username and access key, for example, on Ubuntu I run:
+If you edit JavaScript or HTML files in `src/web`, run
 
 ```
-~/sc-4.3.9-linux32$ ./bin/sc -u gibbs -k deadbeef-2671-11e5-a6a1-206a8a0824be
+$ npm run build
 ```
 
-That sets up a tunnel to Sauce Labs, and on the same machine you should now be
-able to run:
+and then refresh the page.
 
-```
-$ heroku local:run ./node_modules/mocha/bin/mocha
-```
 
-To run only a particular file, pass in one of the filenames in `test/`, e.g.
+## Setting up your own remote version of Data Druid with Heroku:
 
-```
-$ heroku local:run ./node_modules/mocha/bin/mocha test/world.js
-```
-
-Check out how `world.js` and `image.js` are written: they look up files from
-`test-util/pyret-programs` and run them according to Selenium testers in
-`test-util/util.js`.  The best way to test a whole new library is probably to
-add a directory here and figure out a good predicate that can be applied
-across the files (`runAndCheckAllTestsPassed` is probably a good candidate for
-many use cases).
-
-## Setting up your own remote version of code.pyret.org with Heroku:
-
-If you are doing development on code.pyret.org, it can be useful to run it on a remote server (for sharing purposes, etc.). Heroku allows us to do this easily.
+If you are doing development on Data Druid, it can be useful to run it on a remote server (for sharing purposes, etc.). Heroku allows us to do this (somewhat) easily.
 
 ### Before you begin:
 
-Make sure you have cloned the code.pyret.org git repository. Then follow the instructions to get it running locally.
+* Get the [Heroku toolbelt](https://toolbelt.heroku.com/).
 
-The Heroku getting started guide is helpful, but it will be easier if you set things up in the order below
-https://devcenter.heroku.com/articles/getting-started-with-nodejs
+* Make sure you have cloned the Data Druid git repository. Then follow the instructions to get it running locally.
 
 ### To run remotely:
-1. Make an account at http://heroku.com/ and from a terminal run `heroku login`
-2. Navigate to your local code.pyret.org repository in a terminal.
-3.	Run `heroku create <appname>`. This will create an app on Heroku linked to your local repository.
-4.	Set the config variables found in `.env` (or `.env.example`) on Heroku. You can enter them using `heroku config:set NAME1=VALUE1 NAME2=VALUE2` or in the online control panel. There are 3 config variables you should pay special attention to:
-  - add key `GIT_BRANCH`, value should be your branch name
-  - add key `GIT_REV`, value should be your branch name
-  - change `PYRET` from local host to a URL that points to cpo-main.jarr from build folder. Make sure URL ends in js instead of jarr.
-5.	Add a Redis Cloud database using `heroku addons:add rediscloud` or at addons.heroku.com. You will likely have to verify first (enter a credit card), but you shouldn’t actually be charged for the most basic level (but check for yourself!).
-6.	Now, still in your code.pyret.org repo, run
+1. From a terminal run `heroku login`.
+2. Navigate to your local Data Druid repository in a terminal.
+3.	Run `heroku git:remote -a <appname>`, where `<appname>` is the name of the Heroku app you created earlier. This will link your local repository to the app.
+4.	Set the config variables found in `.env` (or `.env.example`) on Heroku. You can enter them using `heroku config:set NAME1=VALUE1 NAME2=VALUE2` or in the online control panel. There are a few variables that must be changed:
+    - add key `GIT_BRANCH`, value should be your branch name
 
-        $ git push heroku <localbranch>:master
-        $ heroku ps:scale web=1
+    - add key `GIT_REV`, value should be your branch name
 
-7.	Now run `heroku open` or visit appname.herokuapp.com.
-8.  Tips for redeploy: if you don't see a successful build under heroku webiste's activity tab, but get "everything is up-to-date" when you run `git push heroku <localbranch>:master`, or your build doesn't look up-to-date, you can do an empty commit: `git commit --allow-empty -m "force deploy"`
+    - change `ASSET_BASE_URL`, `BASE_URL`, and `LOG_URL` from local host URLs to URLs that point to the Heroku app.
+
+    - **change `PYRET`:** because Heroku has time limits for builds, the full build for Data Druid has to be run elsewhere.
+        The way code.pyret.org does this, and the way we adopted, is to set up Travis CI to run the full build and publish `cpo-main.jarr` on Amazon S3 (CPO adds CloudFront to this as well):
+
+        1. Create an Amazon AWS account and an S3 bucket at `https://s3.console.aws.amazon.com`.
+
+        2. Configure Travis for your repository and use the following `.travis.yml` template, following the instructions at https://docs.travis-ci.com/user/deployment/s3/ to get your S3 access keys:
+            ```yml
+            language: node_js
+            sudo: required
+            cache:
+              directories:
+              - node_modules
+            before_install:
+            - ". $HOME/.nvm/nvm.sh"
+            - nvm install stable
+            - nvm use stable
+            - if [[ `npm -v` != 5.2* ]]; then npm i -g npm@5.2; fi
+            - export PATH=$PATH:node_modules/.bin/
+            install:
+            - npm install --ignore-scripts
+            - npm update
+            - make web
+            - make deploy-cpo-main
+            script:
+            - echo "Build completed, deploying cpo-main.jarr to S3"
+            deploy:
+            - provider: s3
+              access_key_id:
+                secure: <ENCRYPTED ACCESS KEY ID>
+              secret_access_key:
+                secure: <ENCRYPTED SECRET ACCESS KEY>
+              bucket: <BUCKET NAME>
+              local-dir: build/web/js
+              upload-dir: <TARGET DIRECTORY>
+              acl: public_read
+              skip_cleanup: true
+              detect_encoding: true
+              on:
+                repo: <REPOSITORY e.g. mxheller/code.pyret.org>
+                branch: <REPO BRANCH>
+            ```
+
+            `<TARGET DIRECTORY>` can be anything you want.
+
+        3. Set `PYRET` to `https://<BUCKET NAME>.s3.amazonaws.com/<TARGET DIRECTORY>/cpo-main.jarr`.
+
+5.	Now, still in your local repository, run `git push heroku <REPO BRANCH>:master`.
+
+6.	Run `heroku open` or visit appname.herokuapp.com.
+7.  Tips for redeploy: if you don't see a successful build under heroku webiste's activity tab, but get "everything is up-to-date" when you run `git push heroku <localbranch>:master`, or your build doesn't look up-to-date, you can do an empty commit: `git commit --allow-empty -m "force deploy"`
