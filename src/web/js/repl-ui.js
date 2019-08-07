@@ -177,14 +177,27 @@
                     var runResult = rr.getField(loadLib, "internal").getModuleResultResult(v);
                     console.log("Time to run compiled program:", JSON.stringify(runResult.stats));
                     if(rr.isSuccessResult(runResult)) {
+                      const definedValues = rr.getField(rr.modules["definitions://"], "defined-values");
                       return rr.safeCall(function() {
-                          // Function to check if value produced by repl satisfies
-                          // the current prompt
-                          let hook = rr.getField(rr.modules["definitions://"], "defined-values")["repl-hook"];
-                          // Value produced by repl from the raw text inputted by student
-                          let answer = rr.getField(runResult.result, "answer");
-                          return hook.app(answer);
+                        // Function to check if value produced by repl satisfies
+                        // the current prompt
+                        let hook = definedValues["repl-hook"];
+                        // Value produced by repl from the raw text inputted by student
+                        let answer = rr.getField(runResult.result, "answer");
+                        return hook.app(answer);
                       }, function(prompt) {
+                        // Render progress bar
+                        const numTasks = definedValues["num-tasks"];
+                        const numTasksRemaining = definedValues["num-tasks-remaining"].app();
+                        const progressBar = document.getElementById('progress-bar');
+                        progressBar.innerHTML = "";
+                        [...Array(numTasks).keys()].forEach(i => {
+                          const segment = document.createElement('div');
+                          segment.classList.add('progress-bar-segment');
+                          if (i < numTasks - numTasksRemaining)
+                            segment.classList.add('progress-bar-segment--completed');
+                          progressBar.appendChild(segment);
+                        });
                         return prompt;
                       }, "rr.drawCheckResults");
                     } else {
@@ -235,6 +248,7 @@
             }
           }
           // DATA DRUID - PROMPT PRINTING
+          $('#loader').hide();
           let task;
           let attemptResult;
           rr.runThunk(function() {
@@ -245,6 +259,11 @@
             return rr.safeCall(function(){
               attemptResult = getCurrentAttempt.app().$name;
               task = getCurrentTask.app();
+
+              // Set hide wrong attempts button to 'Hide' if this attempt was wrong
+              if (attemptResult == 'incorrect' || attemptResult == 'pyret-error')
+                window.setWrongAttemptsHidden(false);
+
               // Render prompt with class indicating result of previous attempt
               // e.g. `attempt-incorrect`, `attempt-correct`
               return renderAndDisplayError(rr, task,

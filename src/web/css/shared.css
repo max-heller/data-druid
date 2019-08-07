@@ -364,13 +364,41 @@ li.topTier > div {
 }
 
 #footer {
-  display: none;
+  display: flex;
+  flex-direction: row;
+  align-content: center;
   height: 2.5em;
-  background-color: #111;
+  background-color: white;
   position: fixed;
   bottom: 0;
   width: 100%;
   z-index: 10000;
+}
+
+#progress-bar {
+  display: flex;
+  margin-left: auto;
+  align-items: center;
+}
+
+.progress-bar-segment {
+  width: 10px; height: 10px;
+  border-radius: 5px;
+  margin: 10px;
+  background-color: #C8C8C8;
+}
+
+.progress-bar-segment--completed {
+  background-color: lightskyblue;
+}
+
+#announcements, #notification {
+  display: none;
+}
+
+#toggleHideWrongAttemptsButton {
+  margin-left: auto;
+  margin-right: 10px;
 }
 
 .blueButton {

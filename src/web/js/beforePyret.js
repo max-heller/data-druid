@@ -69,6 +69,25 @@ $(window).bind("beforeunload", function() {
   return "Because this page can load slowly, and you may have outstanding changes, we ask that you confirm before leaving the editor in case closing was an accident.";
 });
 
+let hidden = false;
+window.setWrongAttemptsHidden = newValue => {
+  hidden = newValue;
+  const buttonText = hidden ? 'Show wrong answers' : 'Hide wrong answers';
+  document.getElementById('toggleHideWrongAttemptsButton').textContent = buttonText;
+};
+
+function toggleHideWrongAttempts() {
+  const prompts = Array.from(document.querySelectorAll(
+    '.attempt-incorrect, .attempt-pyret-error'));
+  const traces = prompts.map(elt => elt.previousSibling);
+  const replLines = traces.map(elt => elt.previousSibling);
+  const all = prompts.concat(traces, replLines);
+  window.setWrongAttemptsHidden(!hidden);
+  const display = hidden ? 'none' : 'block';
+  all.forEach(elt => elt.style.display = display);
+}
+window.toggleHideWrongAttempts = toggleHideWrongAttempts;
+
 var Documents = function() {
 
   function Documents() {
@@ -696,9 +715,12 @@ $(function() {
     });
   }
 
+
+
   $("#runButton").click(function() {
     CPO.autoSave();
   });
+  $("#toggleHideWrongAttemptsButton").click(() => toggleHideWrongAttempts());
 
   $("#new").click(newEvent);
   $("#save").click(saveEvent);
