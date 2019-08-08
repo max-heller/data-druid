@@ -248,7 +248,6 @@
             }
           }
           // DATA DRUID - PROMPT PRINTING
-          $('#loader').hide();
           let task;
           let attemptResult;
           rr.runThunk(function() {

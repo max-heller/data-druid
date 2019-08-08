@@ -1,7 +1,5 @@
 include data-druid
-include image
 import valueskeleton as VS
-include shared-gdrive("cs111-2018.arr", "1XxbD-eg5BAYuufv6mLmEllyg28IR7HeX")
 
 ### INSTRUCTOR DATA DEFINITIONS GO HERE 
 
@@ -25,11 +23,11 @@ x = person2("Bob", 17)
 # (TO BE SHOWN WITH EVERY PROMPT)
 
 # starting line of definition
-defn-start = 8
+defn-start = 6
 defn-char-start = 0
 
 # ending line of definition
-defn-end = 10
+defn-end = 8
 defn-char-end = 50
 
 ### OPENING PROMPT (supports markdown)
@@ -73,5 +71,5 @@ funs = make-funs(session)
 get-current-attempt = funs.{0}
 get-current-task = funs.{1}
 repl-hook = funs.{2}  
-num-tasks = tasks.length()
-num-tasks-remaining = {(): session!tasks.length()}
+num-tasks = tasks.length() - 1
+num-tasks-remaining = {(): session!tasks.length() - 1}
