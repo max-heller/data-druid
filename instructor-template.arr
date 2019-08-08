@@ -34,7 +34,7 @@ defn-char-end = 50
 
 ### OPENING PROMPT (supports markdown)
 
-opening-prompt = [list: "## Data Druid: Weather Tables",
+opening-prompt = [list: "## Data Druid: Test Assignment",
   "The following prompts will ask you to build a few examples of a data structure. If the proposed scenario is impossible to represent with the given data definitions, click the `impossible` button.",
   "Here's the definition of a `Person` object used to store information about an individual:"]
 
@@ -73,3 +73,5 @@ funs = make-funs(session)
 get-current-attempt = funs.{0}
 get-current-task = funs.{1}
 repl-hook = funs.{2}  
+num-tasks = tasks.length()
+num-tasks-remaining = {(): session!tasks.length()}

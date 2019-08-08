@@ -222,6 +222,8 @@ funs = make-funs(session)
 get-current-attempt = funs.{0}
 get-current-task = funs.{1}
 repl-hook = funs.{2}  
+num-tasks = tasks.length()
+num-tasks-remaining = {(): session!tasks.length()}
 ```
 
 #### Prompt Rendering

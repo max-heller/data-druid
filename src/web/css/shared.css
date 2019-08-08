@@ -367,29 +367,34 @@ li.topTier > div {
   display: flex;
   flex-direction: row;
   align-content: center;
+  align-items: center;
   height: 2.5em;
   background-color: white;
   position: fixed;
   bottom: 0;
   width: 100%;
-  z-index: 10000;
+  z-index: 8600;
+  box-shadow: 0px 0px 5px 3px rgba(0, 0, 0, 0.2);
 }
 
 #progress-bar {
   display: flex;
   margin-left: auto;
+  margin-right: auto;
   align-items: center;
 }
 
 .progress-bar-segment {
-  width: 10px; height: 10px;
-  border-radius: 5px;
+  --radius: 6px;
+  width: calc(var(--radius) * 2);
+  height: calc(var(--radius) * 2);
+  border-radius: var(--radius);
   margin: 10px;
   background-color: #C8C8C8;
 }
 
 .progress-bar-segment--completed {
-  background-color: lightskyblue;
+  background-color: #5fa4f1;
 }
 
 #announcements, #notification {
@@ -397,8 +402,24 @@ li.topTier > div {
 }
 
 #toggleHideWrongAttemptsButton {
-  margin-left: auto;
+  margin-left: 10px;
   margin-right: 10px;
+  height: 30px;
+  width: 170px;
+  border: none;
+  background-color: #FF8C00;
+  color: white;
+  font-size: 15px;
+}
+
+#toggleHideWrongAttemptsButton:hover {
+  cursor: pointer;
+}
+
+#toggleHideWrongAttemptsButton.canShowAnswers{
+  background-color: white;
+  color: #FF8C00;
+  border: solid 3px #FF8C00;
 }
 
 .blueButton {

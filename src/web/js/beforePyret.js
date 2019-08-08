@@ -69,11 +69,15 @@ $(window).bind("beforeunload", function() {
   return "Because this page can load slowly, and you may have outstanding changes, we ask that you confirm before leaving the editor in case closing was an accident.";
 });
 
+// true when wrong answers are hidden
 let hidden = false;
 window.setWrongAttemptsHidden = newValue => {
   hidden = newValue;
   const buttonText = hidden ? 'Show wrong answers' : 'Hide wrong answers';
-  document.getElementById('toggleHideWrongAttemptsButton').textContent = buttonText;
+  const hideButton = document.getElementById('toggleHideWrongAttemptsButton')
+  hideButton.textContent = buttonText;
+  // set classes for styling
+  hidden ? hideButton.classList.add("canShowAnswers") : hideButton.classList.remove("canShowAnswers");
 };
 
 function toggleHideWrongAttempts() {
@@ -85,6 +89,7 @@ function toggleHideWrongAttempts() {
   window.setWrongAttemptsHidden(!hidden);
   const display = hidden ? 'none' : 'block';
   all.forEach(elt => elt.style.display = display);
+  
 }
 window.toggleHideWrongAttempts = toggleHideWrongAttempts;
 
@@ -258,7 +263,9 @@ $(function() {
         var name = user.displayName;
         if (user.emails && user.emails[0] && user.emails[0].value) {
           name = user.emails[0].value;
-          if (CPO.isReady) $("#loader").hide();
+          if (CPO.isReady) {
+            $("#loader").hide();
+          }
         }
         target.text(name);
       });
