@@ -46,7 +46,7 @@ var logger = (function(backend) {
   /* Tab, Session, and Browser Identifiers */
   var identifiers = (function(){
     var _identifiers = {};
-    
+
     function storedID(storage, type) {
       var id = storage.getItem(type);
       if (id === null || id === "") {
@@ -56,7 +56,7 @@ var logger = (function(backend) {
       }
       return id;
     }
-    
+
     return {
       get localID () {
         return _identifiers['lid'] || storedID(localStorage, 'lid');
@@ -70,8 +70,9 @@ var logger = (function(backend) {
       }
     };
   })();
-  
+
   function log(name, obj) {
+    return; // Disable CPO's logging for Data Druid
     if(!(obj instanceof Object))
       obj = {};
     obj.meta = [  Date.now()
@@ -83,7 +84,7 @@ var logger = (function(backend) {
                 , "{{GIT_BRANCH}}"];
     backend.log(name, obj);
   }
-  
+
   var isDetailed = localSettings.getItem('log-detailed') == 'true';
 
   return {
@@ -101,7 +102,7 @@ var logger = (function(backend) {
 })({{#LOG_URL}}new AJAXBackend("{{&LOG_URL}}"){{/LOG_URL}}{{^LOG_URL}}new DummyBackend(){{/LOG_URL}});
 
 
-CodeMirror.defineOption('logging', false, 
+CodeMirror.defineOption('logging', false,
   function (cm, new_value) {
     if (new_value != true)
       return;
@@ -126,7 +127,7 @@ CodeMirror.defineOption('logging', false,
     });
   });
 
-// Log the loading of the logger (near the begining of page load)  
+// Log the loading of the logger (near the begining of page load)
 logger.log('load');
 
 // Log page unload
