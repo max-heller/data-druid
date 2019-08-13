@@ -258,6 +258,11 @@
             return rr.safeCall(function(){
               attemptResult = getCurrentAttempt.app().$name;
               task = getCurrentTask.app();
+              
+              // Don't re-render prompt if last submission returned a Nothing value
+              // (i.e., if a value was binded)
+              if (attemptResult == 'neutral' && rawInput != "")
+                task = PNothing;
 
               // Set hide wrong attempts button to 'Hide' if this attempt was wrong
               if (attemptResult == 'incorrect' || attemptResult == 'pyret-error')
