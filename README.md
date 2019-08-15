@@ -1,8 +1,8 @@
-[![Build Status](https://travis-ci.com/mxheller/code.pyret.org.svg?branch=playground)](https://travis-ci.com/mxheller/code.pyret.org)
+[![Build Status](https://travis-ci.com/mxheller/data-druid.svg?branch=playground)](https://travis-ci.com/mxheller/data-druid)
 
 # Data Druid: Unprompted
 
-This README is inspired by https://github.com/brownplt/code.pyret.org
+This README is inspired by https://github.com/brownplt/code.pyret.org.
 
 ## Running Locally
 
@@ -74,7 +74,7 @@ Create a Heroku account at https://heroku.com, then:
 
 ### Starting the server
 
-To run the server (you can let it running in a separate tab --
+To run the server (you can let it run in a separate tab --
 it doesn't need to be terminated across builds), run:
 
 ```
@@ -227,7 +227,7 @@ data Predicate:
 end
 ```
 
-The function component of `Predicate` is a Boolean function that is individually on student inputs. This function should only return `true` on student instances that satisfy the predicate.
+The function component of `Predicate` is a Boolean function that is run individually on student inputs. This function should only return `true` on student instances that satisfy the predicate.
 
 The `hint` component is a `String` that will be displayed as a text hint for a specific predicate when hint criteria is met.
 
