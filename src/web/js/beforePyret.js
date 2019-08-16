@@ -6,6 +6,57 @@ var url = require('url.js');
 var modalPrompt = require('./modal-prompt.js');
 window.modalPrompt = modalPrompt;
 
+/* ENCRPYTION */
+const publicKey = window.crypto.subtle.importKey(
+  "jwk", 
+  JSON.parse(process.env.PUBLIC_KEY),
+  {   //these are the algorithm options
+    name: "RSA-OAEP",
+    hash: {name: "SHA-256"}, 
+  },
+  false,
+  ["encrypt"]
+);
+
+const privateKey = window.crypto.subtle.importKey(
+  "jwk",
+  JSON.parse(process.env.PRIVATE_KEY),
+  {   //these are the algorithm options
+    name: "RSA-OAEP",
+    hash: {name: "SHA-256"},
+  },
+  false,
+  ["decrypt"]
+);
+
+function strToArrayBuffer(str) {
+  var buf = new ArrayBuffer(str.length);
+  var bufView = new Uint8Array(buf);
+  for (var i=0, strLen=str.length; i < strLen; i++) {
+    bufView[i] = str.charCodeAt(i);
+  }
+  return buf;
+}
+
+function arrayBufferToStr(buf) {
+  return String.fromCharCode.apply(null, new Uint8Array(buf));
+}
+
+window.encodeId = function(str) {
+  publicKey.then(function(pKey) {
+    window.crypto.subtle.encrypt(
+      { name: "RSA-OAEP" },
+      pKey, //from generateKey or importKey above
+      strToArrayBuffer(str)
+    )
+    .then(function(encrypted){
+      console.log(new Uint8Array(encrypted));
+    })
+    .catch(function(err) { console.error(err); });
+  })
+  .catch(function(err) { console.error(err); })
+}
+
 const LOG = true;
 window.ct_log = function(/* varargs */) {
   if (window.console && LOG) {
@@ -260,11 +311,21 @@ $(function() {
           $(window).unbind("beforeunload");
           window.location.reload();
         } else if(params["get"] && params["get"]["assignment"]) {
-          var toLoad = api.api.getTemplateFileById(params["get"]["assignment"]);
-          loadProgram(toLoad);
-          programToSave = toLoad;
-          $(window).unbind("beforeunload");
-          window.location.reload();
+          // Decrypt assignment ID and then load file
+          privateKey.then(function(pKey){
+            window.crypto.subtle.decrypt(
+              { name: "RSA-OAEP" },
+              pKey, // private key
+              strToArrayBuffer(params["get"]["assignment"]))
+              .then(function(decryptedId){
+                var toLoad = api.api.getTemplateFileById(arrayBufferToStr(decryptedId));
+                loadProgram(toLoad);
+                programToSave = toLoad;
+                $(window).unbind("beforeunload");
+                window.location.reload();
+              })
+          })
+          .catch(function(err){ console.error(err); })
         } else {
           window.location.href = "/";
           programToSave = Q.fcall(function() { return null; });
