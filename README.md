@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/mxheller/code.pyret.org.svg?branch=repl-hook)](https://travis-ci.com/mxheller/code.pyret.org)
+[![Build Status](https://travis-ci.com/mxheller/data-druid.svg?branch=repl-hook)](https://travis-ci.com/mxheller/data-druid)
 
 # Data Druid: Prompted
 
@@ -166,7 +166,7 @@ If you are doing development on Data Druid, it can be useful to run it on a remo
 
 ## Writing Assignments for Prompted
 
-Prompted assignments are deployed using code.pyret.org's program sharing tool (through Google Drive). 
+Prompted assignments are deployed using code.pyret.org's program sharing tool (through Google Drive).
 
 A single source file is required and can be written directly in Prompted by displaying the editor in dev mode. Dev mode can be activated in any instance of Prompted using the following web console command:
 
@@ -180,15 +180,15 @@ To deploy an assignment:
 
 1. Open the assignment `.arr` file in Prompted and activate dev mode using `toggleDevMode()`.
 
-2. Save the file and hit the `Publish` button. The URL provided will be a working link to the assignment (you may need to hit `Publish` again to view the link). 
+2. Save the file and hit the `Publish` button. The URL provided will be a working link to the assignment (you may need to hit `Publish` again to view the link).
 
-3. If any changes are made to the file, the shared version can be updated by clicking `Publish` and then `Update`. 
+3. If any changes are made to the file, the shared version can be updated by clicking `Publish` and then `Update`.
 
 *Note that users will need to log into Prompted using a Brown email to use this module.*
 
 ### Assignment File Specifications
 
-Prompted uses a single Pyret source file for assignments, and expects certain named variables to be present in the file. A template file, `instructor-template.arr`, is provided for convenience. 
+Prompted uses a single Pyret source file for assignments, and expects certain named variables to be present in the file. A template file, `instructor-template.arr`, is provided for convenience.
 
 Description of required variables in the source `.arr` file:
 
@@ -198,7 +198,7 @@ Description of required variables in the source `.arr` file:
 | `task-list` | `List<Any; (Any -> Boolean)>` | A list of tuples containing the prompts and predicates for each task. The first element of each tuple contains the prompt to render (*See the **Prompt Rendering** section below.*), and the second provides a predicate that student answers are checked against. Student submissions will only be considered 'correct' if this predicate returns `true`. |
 | `closing-prompt` | `Any` | Contains the description to render in the first prompt. *See the **Prompt Rendering** section below.* |
 | `defn-start` | `Number` | Describes the line number that the instructor-provided definition begins on. |
-| `defn-char-start` | `Number` | Describes the index of the character on the provided line where the instructor-provided definition starts (this value will probably be 0). | 
+| `defn-char-start` | `Number` | Describes the index of the character on the provided line where the instructor-provided definition starts (this value will probably be 0). |
 | `defn-end` | `Number` | Describes the line number that the instructor-provided definition ends on. |
 | `defn-char-end` | `Number` | Describes the index of the character on the provided line where the instructor-provided definition ends (recommended to choose an arbitrarily large number for this). |
 
@@ -221,14 +221,14 @@ session = state(neutral, tasks)
 funs = make-funs(session)
 get-current-attempt = funs.{0}
 get-current-task = funs.{1}
-repl-hook = funs.{2}  
+repl-hook = funs.{2}
 num-tasks = tasks.length() - 1
 num-tasks-remaining = {(): session!tasks.length() - 1}
 ```
 
 #### Prompt Rendering
 
-Prompts can be provided to the module as either a `String`, a `List<Any>`, or any other data type. 
+Prompts can be provided to the module as either a `String`, a `List<Any>`, or any other data type.
 
 If a single object is provided, it is rendered as such:
 
@@ -250,7 +250,7 @@ Prompted will render a clickable `impossible` button next to each input line for
 
 #### Value Skeleton Hiding
 
-This feature is actually built into code.pyret.org, but instructors may find it helpful for writing certain tasks. It allows instructors to write data structures that hide their contents when displayed on the REPL. 
+This feature is actually built into code.pyret.org, but instructors may find it helpful for writing certain tasks. It allows instructors to write data structures that hide their contents when displayed on the REPL.
 
 This can be especially helpful when writing tasks that ask students to retrieve information from a data structure (e.g., "get the `name` field from a `Person` object") to prevent students from cheating (typing the answer directly into the input line).
 
@@ -271,7 +271,7 @@ sharing:
 
 *Note that `VS.vs-str("Output intentionally hidden.")` can be replaced with `VS.vs-seq(empty)` to display nothing, or any other valid `valueskeleton` rendering object.*
 
-This method of hiding output will hide the output of *every* instance of the data structure. To maintain consistency of expected Pyret behavior for students, it is recommended that the primary data definition be left as-is and a new data definition be made for instances that need to be hidden. 
+This method of hiding output will hide the output of *every* instance of the data structure. To maintain consistency of expected Pyret behavior for students, it is recommended that the primary data definition be left as-is and a new data definition be made for instances that need to be hidden.
 
 For example, if students are working with a `Person` datatype, this definition would be provided for students to work with:
 
