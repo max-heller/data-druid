@@ -89,7 +89,7 @@ function toggleHideWrongAttempts() {
   window.setWrongAttemptsHidden(!hidden);
   const display = hidden ? 'none' : 'block';
   all.forEach(elt => elt.style.display = display);
-  
+
 }
 window.toggleHideWrongAttempts = toggleHideWrongAttempts;
 
@@ -307,6 +307,11 @@ $(function() {
           console.log("Logged in and has program to load: ", toLoad);
           loadProgram(toLoad);
           programToSave = toLoad;
+        } else if (params["get"] && params["get"]["assignment"]) {
+          var toLoad = api.api.getFileById(params["get"]["assignment"]);
+          console.log("Logged in and has program to load: ", toLoad);
+          loadProgram(toLoad);
+          programToSave = Q.fcall(function() { return null; });;
         } else {
           programToSave = Q.fcall(function() { return null; });
         }
@@ -338,8 +343,9 @@ $(function() {
       enableFileOptions();
       programLoad = api.getFileById(params["get"]["program"]);
       programLoad.then(function(p) { showShareContainer(p); });
-    }
-    if(params["get"] && params["get"]["share"]) {
+    } else if (params["get"] && params["get"]["assignment"]) {
+      programLoad = api.getFileById(params["get"]["assignment"]);
+    } else if (params["get"] && params["get"]["share"]) {
       logger.log('shared-program-load',
         {
           id: params["get"]["share"]
