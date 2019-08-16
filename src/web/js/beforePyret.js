@@ -259,8 +259,8 @@ $(function() {
           programToSave = toLoad;
           $(window).unbind("beforeunload");
           window.location.reload();
-        } else if(params["get"] && params["get"]["template"]) {
-          var toLoad = api.api.getTemplateFileById(params["get"]["template"]);
+        } else if(params["get"] && params["get"]["assignment"]) {
+          var toLoad = api.api.getTemplateFileById(params["get"]["assignment"]);
           loadProgram(toLoad);
           programToSave = toLoad;
           $(window).unbind("beforeunload");
@@ -292,12 +292,12 @@ $(function() {
       enableFileOptions();
       programLoad = api.getFileById(params["get"]["program"]);
       programLoad.then(function(p) { showShareContainer(p); });
-    } else if(params["get"] && params["get"]["template"]) {
+    } else if(params["get"] && params["get"]["assignment"]) {
       logger.log('template-program-load',
         {
-          id: params["get"]["template"]
+          id: params["get"]["assignment"]
         });
-      programLoad = api.getTemplateFileById(params["get"]["template"]);
+      programLoad = api.getTemplateFileById(params["get"]["assignment"]);
     } else {
       window.location.href = "/";
     }
