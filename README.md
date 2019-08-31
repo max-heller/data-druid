@@ -178,11 +178,19 @@ toggleDevMode()
 
 To deploy an assignment:
 
-1. Open the assignment `.arr` file in Prompted and activate dev mode using `toggleDevMode()`.
+1. In Google Drive, right-click on the `.arr` file and click "Get sharable link".
 
-2. Save the file and hit the `Publish` button. The URL provided will be a working link to the assignment (you may need to hit `Publish` again to view the link).
+2. Copy the URL that is provided. Link sharing may need to be turned on.
 
-3. If any changes are made to the file, the shared version can be updated by clicking `Publish` and then `Update`.
+3. Copy the Google Drive ID of the file, which is the text immediately following `id=` in this URL. I.e., the link will look like this: `https://drive.google.com/open?id=<ID HERE>`.
+
+With the assignment's Google Drive ID, the following URL will be a working link to the assignment (replace `<Prompted Domain>` with the working domain for Prompted):
+
+```
+https://<Prompted Domain>/editor#assignment=<Assignment Google Drive ID>
+```
+  
+If any changes are made to the source file, users will need to reload the page to see changes. 
 
 *Note that users will need to log into Prompted using a Brown email to use this module.*
 
