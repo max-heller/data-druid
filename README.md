@@ -187,7 +187,7 @@ To deploy an assignment, obtain the assignment's Google Drive folder ID:
 With the assignment's GDrive folder ID, the following URL will be a working link to the assignment (replace `Unprompted Domain` with the working domain for Unprompted):
 
 ```
-https://<Unprompted Domain>/editor#assignment=<Assignment Folder ID>
+https://<Unprompted Domain>/assignment/<Assignment Folder ID>
 ```
 
 Loading up the assignment will automatically create a file for the student with the same name as the template file. If such a file has already been created, it will be loaded up automatically.
