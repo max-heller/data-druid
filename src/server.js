@@ -123,7 +123,7 @@ function start(config, onServerReady) {
   });
 
   app.get("/login", function(req, res) {
-    var redirect = req.param("redirect") || "/editor";
+    var redirect = req.param("redirect");
     if(!(req.session && req.session["user_id"])) {
       res.redirect(auth.getAuthUrl(redirect));
     }
@@ -223,7 +223,7 @@ function start(config, onServerReady) {
           }
         });
         user.then(function(u) {
-          const redirect = req.param("state") || "/editor";
+          const redirect = req.param("state");
           req.session["user_id"] = u.google_id;
           res.redirect(redirect);
         });
@@ -263,59 +263,16 @@ function start(config, onServerReady) {
     }
   });
 
-  app.get("/new-from-drive", function(req, res) {
+  app.get("/assignment/:id", function(req, res) {
     var u = requireLogin(req, res);
     u.then(function(user) {
-      auth.refreshAccess(user.refresh_token, function(err, newToken) {
-        var client = new gapi.auth.OAuth2(
-            config.google.clientId,
-            config.google.clientSecret,
-            config.baseUrl + config.google.redirect
-          );
-        client.setCredentials({
-          access_token: newToken
-        });
-        var drive = gapi.drive({ version: 'v2', auth: client });
-        var parsed = url.parse(req.url, true);
-        var state = decodeURIComponent(parsed.query["state"]);
-        var folderId = JSON.parse(state)["folderId"];
-        drive.files.insert({
-          resource: {
-            title: 'new-file.arr',
-            mimeType: 'text/plain',
-            parents: [{id: folderId}]
-          },
-          media: {
-            mimeType: 'text/plain',
-            body: ''
-          }
-        }, function(err, response) {
-          if(err) {
-            res.redirect("/editor");
-          }
-          else {
-            res.redirect("/editor#program=" + response.id);
-          }
-        });
+      res.render("editor.html", {
+        BASE_URL: config.baseUrl,
+        ASSIGNMENT_ID: req.params.id,
+        GOOGLE_API_KEY: config.google.apiKey,
+        CSRF_TOKEN: req.csrfToken(),
+        CURRENT_VERSION: config.version
       });
-    });
-  });
-
-  app.get("/open-from-drive", function(req, res) {
-    var u = requireLogin(req, res);
-    u.then(function(user) {
-      var parsed = url.parse(req.url, true);
-      var state = decodeURIComponent(parsed.query["state"]);
-      var programId = JSON.parse(state)["ids"][0];
-      res.redirect("/editor#program=" + programId);
-    });
-  });
-
-  app.get("/editor", function(req, res) {
-    res.render("editor.html", {
-      BASE_URL: config.baseUrl,
-      GOOGLE_API_KEY: config.google.apiKey,
-      CSRF_TOKEN: req.csrfToken()
     });
   });
 
@@ -324,10 +281,6 @@ function start(config, onServerReady) {
       path.resolve(__dirname, "web", "ide.html"),
       {ASSET_BASE_URL: process.env.ASSET_BASE_URL || ''}
     );
-  });
-
-  app.get("/neweditor", function(req, res) {
-    res.sendfile("build/web/editor.html");
   });
 
   app.get("/source-map.js", function(req, res) {

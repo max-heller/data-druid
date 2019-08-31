@@ -270,35 +270,31 @@
         }
 
         // logging
-        window.assignmentID.then(id => {
-          fetch("https://us-central1-data-druid-brown.cloudfunctions.net/playground_logger", {
-            method: 'POST',
-            body: JSON.stringify({
-              student_email: email,
-              assignment_id: id,
-              tool: toolAssignment,
-              submission: studentContents,
-              example_count: instances.length,
-              hints: JSON.stringify(Array.from(hintsUsed)),
-              invalid: JSON.stringify(invalidPositions.map(posToLineNumbers)),
-              results: JSON.stringify(resultsWithPos)
-            }),
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          }).then(function (res) {
-            console.log(res);
-            if (res.status != 200)
-            alert("Encountered error while logging: Server rejected request. Try refreshing the page. If this error message persists, please contact your instructor.", err);
-          }).catch(function (err) {
-            alert("Unable to contact logging server. Check your internet connection. If this error message persists, please contact your instructor.", err);
-          });
-
-          // Reset used hints
-          hintsUsed.clear();
+        fetch("https://us-central1-data-druid-brown.cloudfunctions.net/playground_logger", {
+          method: 'POST',
+          body: JSON.stringify({
+            student_email: email,
+            assignment_id: ASSIGNMENT_ID,
+            tool: toolAssignment,
+            submission: studentContents,
+            example_count: instances.length,
+            hints: JSON.stringify(Array.from(hintsUsed)),
+            invalid: JSON.stringify(invalidPositions.map(posToLineNumbers)),
+            results: JSON.stringify(resultsWithPos)
+          }),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }).then(function (res) {
+          console.log(res);
+          if (res.status != 200)
+          alert("Encountered error while logging: Server rejected request. Try refreshing the page. If this error message persists, please contact your instructor.", err);
         }).catch(function (err) {
-          alert("Encountered error while logging: Unable to send request. Try refreshing the page. If this error message persists, please contact your instructor.", err);
+          alert("Unable to contact logging server. Check your internet connection. If this error message persists, please contact your instructor.", err);
         });
+
+        // Reset used hints
+        hintsUsed.clear();
 
         // Display predicate widgets if in checked mode
         if (toolAssignment === 'checked') {

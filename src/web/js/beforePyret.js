@@ -252,23 +252,11 @@ $(function() {
         $(".loginOnly").show();
         $(".logoutOnly").hide();
         setUsername($("#username"));
-        if(params["get"] && params["get"]["program"]) {
-          var toLoad = api.api.getFileById(params["get"]["program"]);
-          console.log("Logged in and has program to load: ", toLoad);
-          loadProgram(toLoad);
-          programToSave = toLoad;
-          $(window).unbind("beforeunload");
-          window.location.reload();
-        } else if(params["get"] && params["get"]["assignment"]) {
-          var toLoad = api.api.getTemplateFileById(params["get"]["assignment"]);
-          loadProgram(toLoad);
-          programToSave = toLoad;
-          $(window).unbind("beforeunload");
-          window.location.reload();
-        } else {
-          window.location.href = "/";
-          programToSave = Q.fcall(function() { return null; });
-        }
+        var toLoad = api.api.getTemplateFileById(ASSIGNMENT_ID);
+        loadProgram(toLoad);
+        programToSave = toLoad;
+        $(window).unbind("beforeunload");
+        window.location.reload();
       });
       api.collection.fail(function() {
         $("#connectButton").text("Connect to Google Drive");
@@ -288,19 +276,7 @@ $(function() {
   */
   var initialProgram = storageAPI.then(function(api) {
     var programLoad = null;
-    if(params["get"] && params["get"]["program"]) {
-      enableFileOptions();
-      programLoad = api.getFileById(params["get"]["program"]);
-      programLoad.then(function(p) { showShareContainer(p); });
-    } else if(params["get"] && params["get"]["assignment"]) {
-      logger.log('template-program-load',
-        {
-          id: params["get"]["assignment"]
-        });
-      programLoad = api.getTemplateFileById(params["get"]["assignment"]);
-    } else {
-      window.location.href = "/";
-    }
+    programLoad = api.getTemplateFileById(ASSIGNMENT_ID);
     if(programLoad) {
       programLoad.fail(function(err) {
         console.error(err);
