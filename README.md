@@ -187,7 +187,7 @@ To deploy an assignment:
 With the assignment's Google Drive ID, the following URL will be a working link to the assignment (replace `<Prompted Domain>` with the working domain for Prompted):
 
 ```
-https://<Prompted Domain>/editor#assignment=<Assignment Google Drive ID>
+https://<Prompted Domain>/assignment/<Assignment Google Drive ID>
 ```
   
 If any changes are made to the source file, users will need to reload the page to see changes. 
