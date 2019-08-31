@@ -100,35 +100,6 @@
 
     var constructors = gdriveLocators.makeLocatorConstructors(storageAPI, runtime, compileLib, compileStructs, parsePyret, builtinModules, cpo);
 
-    // NOTE(joe): In order to yield control quickly, this doesn't pause the
-    // stack in order to save.  It simply sends the save requests and
-    // immediately returns.  This avoids needlessly serializing multiple save
-    // requests when this is called repeatedly from Pyret.
-    function saveGDriveCachedFile(name, content) {
-      var file = storageAPI.then(function(storageAPI) {
-        var existingFile = storageAPI.getCachedFileByName(name);
-        return existingFile.then(function(f) {
-          if(f.length >= 1) {
-            return f[0];
-          }
-          else {
-            return storageAPI.createFile(name, {
-              saveInCache: true,
-              fileExtension: ".js",
-              mimeType: "text/plain"
-            });
-          }
-        });
-      });
-      file.then(function(f) {
-        f.save(content, true);
-      });
-      return runtime.nothing;
-    }
-
-    // NOTE(joe): this function just allocates a closure, so it's stack-safe
-    var onCompile = gmf(cpo, "make-on-compile").app(runtime.makeFunction(saveGDriveCachedFile, "save-gdrive-cached-file"));
-
     function uriFromDependency(dependency) {
       return runtime.ffi.cases(gmf(compileStructs, "is-Dependency"), "Dependency", dependency,
         {
@@ -254,8 +225,7 @@
           restartInteractions: function(source, options) {
             var pyOptions = defaultOptions.extendWith({
               "type-check": options.typeCheck,
-              "check-all": options.checkAll,
-              "on-compile": onCompile
+              "check-all": options.checkAll
             });
             var ret = Q.defer();
             setTimeout(function() {
@@ -502,18 +472,9 @@
       }
       window.toggleDevMode();
 
-      // save
-      // On Mac mod ends up mapping to command+s whereas on Windows and Linux it maps to ctrl+s.
-      Mousetrap.bindGlobal('mod+s', function(e) {
-        CPO.save();
-        e.stopImmediatePropagation();
-        e.preventDefault();
-      });
-
       // run the definitions area
       Mousetrap.bindGlobal('ctrl+enter', function(e){
         doRunAction(editor.cm.getValue());
-        CPO.autoSave();
         e.stopImmediatePropagation();
         e.preventDefault();
       });
@@ -522,7 +483,6 @@
         CPO.sayAndForget(
           "Press Escape to exit help. " +
           "Control question mark: recite help. " +
-          "Control s: save. " +
           "F6 and shift-F6: cycle focus through regions. " +
           "F7 or Control enter: run the code in the definitions window. " +
           "F11: insert image. " +
@@ -574,7 +534,6 @@
 
       Mousetrap.bindGlobal('f7', function(e) {
         doRunAction(editor.cm.getValue());
-        CPO.autoSave();
         e.stopImmediatePropagation();
         e.preventDefault();
       });
@@ -643,159 +602,6 @@
             }]
         });
       }
-
-      var lastSave = 0;
-      function handlePickerData(documents, picker, drive) {
-        // File loaded
-        if (documents[0][picker.Document.TYPE] === "file") {
-          var id = documents[0][picker.Document.ID];
-          function load(here) {
-            if(here) {
-
-              window.CPO.save().then(function() {
-                var p = drive.getFileById(id);
-
-                window.CPO.showShareContainer(p);
-                history.pushState(null, null, "#program=" + id);
-                window.CPO.loadProgram(p).then(function(contents) {
-                  window.CPO.editor.cm.setValue(contents);
-                  window.CPO.editor.cm.clearHistory();
-                });
-              })
-              .fail(function(err) {
-                window.flashMessage("Currently unable to save, try opening that file in a new tab");
-              });
-            }
-            else {
-              window.open(window.APP_BASE_URL + "/editor#program=" + id, "_blank");
-            }
-          }
-          function openFile(id) {
-            var filePrompt = new modalPrompt({
-                title: "Where would you like to open the file?",
-                style: "tiles",
-                hideSubmit: true,
-                options: [
-                  {
-                    message: "Open here",
-                    details: "The current file will be saved first",
-                    on: {click: function() {
-                      load(true);
-                      filePrompt.onClose();
-                    }}
-                  },
-                  {
-                    message: "Open in new tab",
-                    details: "The current file will remain open in this tab",
-                    on: {click: function() {
-                      load(false);
-                      filePrompt.onClose();
-                    }}
-                  }]
-              });
-            filePrompt.show();
-          }
-          openFile(documents[0][picker.Document.ID]);
-        }
-        // Picture loaded
-        else if (documents[0][picker.Document.TYPE] === picker.Type.PHOTO) {
-
-          try {
-            photoPrompt().show(function(res) {
-              // Name of event for CM undo history
-              var origin = "+insertImage" + curImg;
-              var asValues = (res === "values");
-              var asDefs = (res === "defs");
-              var asList = (res === "list");
-              if (!(asValues || asDefs || asList)) {
-                // Check for garbage and log it
-                if (res !== null) {
-                  console.warn("Unknown photoPrompt response: ", res);
-                }
-                return;
-              }
-              // http://stackoverflow.com/questions/23733455/inserting-a-new-text-at-given-cursor-position
-              var cm = CPO.editor.cm;
-              var doc = cm.getDoc();
-              function placeInEditor(str) {
-                var cursor = doc.getCursor();
-                var line = doc.getLine(cursor.line);
-                var pos = {
-                  line: cursor.line,
-                  ch: line.length
-                };
-                doc.replaceRange(str, pos, undefined, origin);
-                reindent(cursor.line);
-              }
-              function reindent(line) {
-                cm.indentLine(line || doc.getCursor().line);
-              }
-              function emitNewline() {
-                var cursor = doc.getCursor();
-                placeInEditor('\n');
-                // FIXME: Dunno why this happens.
-                if (cursor.line === doc.getCursor().line) {
-                  doc.setCursor({line: cursor.line + 1, ch: 0});
-                }
-              }
-              function emitLn(s) {
-                placeInEditor(s);
-                emitNewline();
-              }
-              function onEmptyLine() {
-                var cursor = doc.getCursor("to");
-                var line = doc.getLine(cursor.line);
-                return (/^\s*$/.test(line));
-              }
-              // Make newline at cursor position if we are not on an empty line
-              if (onEmptyLine()) {
-                reindent();
-              } else {
-                emitNewline();
-              }
-              if (asList) {
-                placeInEditor("[list:");
-              }
-              documents.forEach(function(d, idx) {
-                var pathToImg = '"' + window.APP_BASE_URL + "/shared-image-contents?sharedImageId="
-                  + d.id + '"';
-                var outstr = asDefs ? ("img" + curImg + " = ") : "";
-                ++curImg;
-                outstr += "image-url(" + pathToImg + ")";
-                var isLast = (idx === (documents.length - 1));
-                if (asList) {
-                  if (idx === 0) {
-                    // The space after ":" gets eaten, so we need to enter it here
-                    outstr = ' ' + outstr;
-                  }
-                  outstr += isLast ? "]" : ",";
-                }
-                if (isLast) {
-                  placeInEditor(outstr);
-                } else {
-                  emitLn(outstr);
-                }
-              });
-            });
-          }
-          catch(e) {
-            console.error("The show() function failed: ", e);
-          }
-        } else {
-          flashError("Invalid file type: " + documents[0][picker.Document.TYPE]);
-        }
-      }
-      var insertPicker = new FilePicker({
-        onLoaded: function() {
-          $("#insert").attr("disabled", false);
-          insertPicker.openOn($("#insert")[0], "click");
-        },
-        onSelect: handlePickerData,
-        onError: flashError,
-        onInternalError: stickError,
-        views: ["imageView"],
-        title: "Select an image to use"
-      });
 
       return runtime.makeModuleReturn({
         repl: runtime.makeOpaque(repl)

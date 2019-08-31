@@ -140,8 +140,6 @@ window.setInterval(checkVersion, VERSION_CHECK_INTERVAL);
 
 window.CPO = {
   isReady: false,
-  save: function() {},
-  autoSave: function() {},
   documents : new Documents()
 };
 $(function() {
@@ -302,19 +300,9 @@ $(function() {
         setUsername($("#username"));
         $(window).unbind("beforeunload");
         window.location.reload();
-        if(params["get"] && params["get"]["program"]) {
-          var toLoad = api.api.getFileById(params["get"]["program"]);
-          console.log("Logged in and has program to load: ", toLoad);
-          loadProgram(toLoad);
-          programToSave = toLoad;
-        } else if (params["get"] && params["get"]["assignment"]) {
-          var toLoad = api.api.getFileById(params["get"]["assignment"]);
-          console.log("Logged in and has program to load: ", toLoad);
-          loadProgram(toLoad);
-          programToSave = Q.fcall(function() { return null; });;
-        } else {
-          programToSave = Q.fcall(function() { return null; });
-        }
+        var toLoad = api.api.getFileById(ASSIGNMENT_ID);
+        console.log("Logged in and has program to load: ", toLoad);
+        loadProgram(toLoad);
       });
       api.collection.fail(function() {
         $("#connectButton").text("Connect to Google Drive");
@@ -327,54 +315,6 @@ $(function() {
       });
     });
     storageAPI = storageAPI.then(function(api) { return api.api; });
-  });
-
-  /*
-    initialProgram holds a promise for a Drive File object or null
-
-    It's null if the page doesn't have a #share or #program url
-
-    If the url does have a #program or #share, the promise is for the
-    corresponding object.
-  */
-  var initialProgram = storageAPI.then(function(api) {
-    var programLoad = null;
-    if(params["get"] && params["get"]["program"]) {
-      enableFileOptions();
-      programLoad = api.getFileById(params["get"]["program"]);
-      programLoad.then(function(p) { showShareContainer(p); });
-    } else if (params["get"] && params["get"]["assignment"]) {
-      programLoad = api.getFileById(params["get"]["assignment"]);
-    } else if (params["get"] && params["get"]["share"]) {
-      logger.log('shared-program-load',
-        {
-          id: params["get"]["share"]
-        });
-      programLoad = api.getSharedFileById(params["get"]["share"]);
-      programLoad.then(function(file) {
-        // NOTE(joe): If the current user doesn't own or have access to this file
-        // (or isn't logged in) this will simply fail with a 401, so we don't do
-        // any further permission checking before showing the link.
-        file.getOriginal().then(function(response) {
-          console.log("Response for original: ", response);
-          var original = $("#open-original").show().off("click");
-          var id = response.result.value;
-          original.removeClass("hidden");
-          original.click(function() {
-            window.open(window.APP_BASE_URL + "/editor#program=" + id, "_blank");
-          });
-        });
-      });
-    }
-    if(programLoad) {
-      programLoad.fail(function(err) {
-        console.error(err);
-        window.stickError("The program failed to load.");
-      });
-      return programLoad;
-    } else {
-      return null;
-    }
   });
 
   function setTitle(progName) {
@@ -414,7 +354,6 @@ $(function() {
   }
 
   function loadProgram(p) {
-    programToSave = p;
     return p.then(function(prog) {
       if(prog !== null) {
         updateName(prog);
@@ -552,12 +491,8 @@ $(function() {
     //console.log('(cf)docactelt=', document.activeElement);
   }
 
-  var programLoaded = loadProgram(initialProgram);
+  var programLoaded = loadProgram(storageAPI.then(api => api.getFileById(ASSIGNMENT_ID)));
 
-  var programToSave = initialProgram;
-
-  // Assignment ID from CPO share
-  window.assignment_id = programToSave.then(function (p) { return p.getUniqueId(); });
   // Email of logged in user
   window.user = storageAPI.then(api => api.about()).then(about => about.user.emailAddress);
 
@@ -574,11 +509,6 @@ $(function() {
   function nameOrUntitled() {
     return filename || "Untitled";
   }
-  function autoSave() {
-    programToSave.then(function(p) {
-      if(p !== null && !p.shared) { save(); }
-    });
-  }
 
   function enableFileOptions() {
     $("#filemenuContents *").removeClass("disabled");
@@ -592,153 +522,7 @@ $(function() {
     window.open(window.APP_BASE_URL + "/editor");
   }
 
-  function saveEvent(e) {
-    if(menuItemDisabled("save")) { return; }
-    return save();
-  }
-
-  /*
-    save : string (optional) -> undef
-
-    If a string argument is provided, create a new file with that name and save
-    the editor contents in that file.
-
-    If no filename is provided, save the existing file referenced by the editor
-    with the current editor contents.  If no filename has been set yet, just
-    set the name to "Untitled".
-
-  */
-  function save(newFilename) {
-    var useName, create;
-    if(newFilename !== undefined) {
-      useName = newFilename;
-      create = true;
-    }
-    else if(filename === false) {
-      filename = "Untitled";
-      create = true;
-    }
-    else {
-      useName = filename; // A closed-over variable
-      create = false;
-    }
-    window.stickMessage("Saving...");
-    var savedProgram = programToSave.then(function(p) {
-      if(p !== null && p.shared && !create) {
-        return p; // Don't try to save shared files
-      }
-      if(create) {
-        programToSave = storageAPI
-          .then(function(api) { return api.createFile(useName); })
-          .then(function(p) {
-            // showShareContainer(p); TODO(joe): figure out where to put this
-            history.pushState(null, null, "#program=" + p.getUniqueId());
-            updateName(p); // sets filename
-            enableFileOptions();
-            return p;
-          });
-        return programToSave.then(function(p) {
-          return save();
-        });
-      }
-      else {
-        return programToSave.then(function(p) {
-          if(p === null) {
-            return null;
-          }
-          else {
-            return p.save(CPO.editor.cm.getValue(), false);
-          }
-        }).then(function(p) {
-          if(p !== null) {
-            window.flashMessage("Program saved as " + p.getName());
-          }
-          return p;
-        });
-      }
-    });
-    savedProgram.fail(function(err) {
-      window.stickError("Unable to save", "Your internet connection may be down, or something else might be wrong with this site or saving to Google.  You should back up any changes to this program somewhere else.  You can try saving again to see if the problem was temporary, as well.");
-      console.error(err);
-    });
-    return savedProgram;
-  }
-
-  function saveAs() {
-    if(menuItemDisabled("saveas")) { return; }
-    programToSave.then(function(p) {
-      var name = p === null ? "Untitled" : p.getName();
-      var saveAsPrompt = new modalPrompt({
-        title: "Save a copy",
-        style: "text",
-        options: [
-          {
-            message: "The name for the copy:",
-            defaultValue: name
-          }
-        ]
-      });
-      return saveAsPrompt.show().then(function(newName) {
-        if(newName === null) { return null; }
-        window.stickMessage("Saving...");
-        return save(newName);
-      }).
-      fail(function(err) {
-        console.error("Failed to rename: ", err);
-        window.flashError("Failed to rename file");
-      });
-    });
-  }
-
-  function rename() {
-    programToSave.then(function(p) {
-      var renamePrompt = new modalPrompt({
-        title: "Rename this file",
-        style: "text",
-        options: [
-          {
-            message: "The new name for the file:",
-            defaultValue: p.getName()
-          }
-        ]
-      });
-      // null return values are for the "cancel" path
-      return renamePrompt.show().then(function(newName) {
-        if(newName === null) {
-          return null;
-        }
-        window.stickMessage("Renaming...");
-        programToSave = p.rename(newName);
-        return programToSave;
-      })
-      .then(function(p) {
-        if(p === null) {
-          return null;
-        }
-        updateName(p);
-        window.flashMessage("Program saved as " + p.getName());
-      })
-      .fail(function(err) {
-        console.error("Failed to rename: ", err);
-        window.flashError("Failed to rename file");
-      });
-    })
-    .fail(function(err) {
-      console.error("Unable to rename: ", err);
-    });
-  }
-
-
-
-  $("#runButton").click(function() {
-    CPO.autoSave();
-  });
   $("#toggleHideWrongAttemptsButton").click(() => toggleHideWrongAttempts());
-
-  $("#new").click(newEvent);
-  $("#save").click(saveEvent);
-  $("#rename").click(rename);
-  $("#saveas").click(saveAs);
 
   var focusableElts = $(document).find('#header .focusable');
   //console.log('focusableElts=', focusableElts)
@@ -1260,13 +1044,10 @@ $(function() {
     CPO.editor.cm.setOption("readOnly", false);
   });
 
-  CPO.autoSave = autoSave;
-  CPO.save = save;
   CPO.updateName = updateName;
   CPO.showShareContainer = showShareContainer;
   CPO.loadProgram = loadProgram;
   CPO.cycleFocus = cycleFocus;
   CPO.say = say;
   CPO.sayAndForget = sayAndForget;
-
 });

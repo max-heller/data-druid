@@ -258,7 +258,7 @@
             return rr.safeCall(function(){
               attemptResult = getCurrentAttempt.app().$name;
               task = getCurrentTask.app();
-              
+
               // Don't re-render prompt if last submission returned a Nothing value
               // (i.e., if a value was binded)
               if (attemptResult == 'neutral' && rawInput != "")
@@ -292,13 +292,12 @@
             // If answer was correct, task list will have advanced by this point,
             // so we need to look for the "previous" task id
             if (attemptResult === "correct") task_id--;
-            Q.all([window.assignment_id, window.user])
-              .then(function ([assignment_id, email]) {
+            window.user.then(function (email) {
                 fetch("https://us-central1-data-druid-brown.cloudfunctions.net/classroom_logger", {
                   method: 'POST',
                   body: JSON.stringify({
                     student_email: email,
-                    assignment_id: assignment_id,
+                    assignment_id: ASSIGNMENT_ID,
                     task_id: task_id,
                     raw_input: rawInput,
                     result: attemptResult
@@ -541,7 +540,6 @@
             bgiframe : true,
             modal : true,
             overlay : { opacity: 0.5, background: 'black'},
-            //buttons : { "Save" : closeDialog },
             width : "auto",
             height : "auto",
             close : onClose,
