@@ -229,23 +229,21 @@
         }
       }
 
-      window.user.then(email => {
+      Promise.all([window.user, window.studentToolAssignments]).then(([email, assignments]) => {
         // Determine whether user is assigned to checked
         // or playground version of the assignment
         // Instructors are assigned to checked and have debug mode enabled,
         // which prints extra information in the console during runs
         let toolAssignment;
-        if (window.studentToolAssignments.checked.includes(email)) {
-          toolAssignment = 'checked';
-        } else if (window.studentToolAssignments.playground.includes(email)) {
+        if (assignments.playground &&
+            assignments.playground.includes(email)) {
           toolAssignment = 'playground';
-        } else if (window.studentToolAssignments.instructor &&
-            window.studentToolAssignments.instructor.includes(email)) {
-          debugMode = true;
-          toolAssignment = 'checked';
         } else {
-          console.error("Student not assigned to a tool");
-          return alert("Your email is not associated with this assignment, please contact your instructor");
+          toolAssignment = 'checked';
+          if (assignments.instructor &&
+              assignments.instructor.includes(email)) {
+            debugMode = true;
+          }
         }
 
         // Trim instructor comments from top of editor

@@ -247,49 +247,54 @@ window.createProgramCollectionAPI = function createProgramCollectionAPI(collecti
                 return ls("'"+ id + "' in parents and title contains 'predicates.arr'").then(predicateResults => {
                   window.predicateFileId = predicateResults[0].id;
                   // Load Checked/Playground email assignment file
-                  return ls("'"+ id + "' in parents and title contains 'students.json'").then(studentResults => {
-                    return fileBuilder(studentResults[0]).getContents().then(contents => {
-                      window.studentToolAssignments = JSON.parse(contents);
-                      if (results[0]) {
-                        // load the student's work
-                        return drive.files.get({"fileId": results[0].id});
-                      } else {
-                        // copy the template
-                        return ls("'"+ id + "' in parents and title contains 'examples.arr'").then(function(results) {
-                          let template = results[0];
-                          return drive.files.copy({
-                            "fileId": template.id,
-                            "resource": {
-                              "parents": [{"id": bc.id}]
-                            }})
-                            .then(function(file) {
+                  window.studentToolAssignments = new Promise((resolve, reject) => {
+                    ls("'"+ id + "' in parents and title contains 'students.json'")
+                      .then(studentResults => {
+                        return fileBuilder(studentResults[0]).getContents().then(contents => {
+                          resolve(JSON.parse(contents));
+                        });
+                      })
+                      .catch(() => {
+                        resolve({});
+                      });
+                  });
+                  if (results[0]) {
+                    // load the student's work
+                    return drive.files.get({"fileId": results[0].id});
+                  } else {
+                    // copy the template
+                    return ls("'"+ id + "' in parents and title contains 'examples.arr'").then(function(results) {
+                      let template = results[0];
+                      return drive.files.copy({
+                        "fileId": template.id,
+                        "resource": {
+                          "parents": [{"id": bc.id}]
+                        }})
+                        .then(function(file) {
+                          return drive.properties.insert({
+                              "fileId": file.id,
+                              "resource": {
+                                "key": "assignment",
+                                "value": id,
+                                "visibility": "PUBLIC"
+                              }
+                            }).then(function(_) {
                               return drive.properties.insert({
                                   "fileId": file.id,
                                   "resource": {
-                                    "key": "assignment",
-                                    "value": id,
+                                    "key": "data-druid",
+                                    "value": "yes",
                                     "visibility": "PUBLIC"
-                                  }
-                                }).then(function(_) {
-                                  return drive.properties.insert({
-                                      "fileId": file.id,
-                                      "resource": {
-                                        "key": "data-druid",
-                                        "value": "yes",
-                                        "visibility": "PUBLIC"
-                                      }});
-                                }).then(function(_) {
-                                return file;
-                              });
-                            });
+                                  }});
+                            }).then(function(_) {
+                            return file;
+                          });
                         });
-                      }
                     });
-                  })
+                  }
                 });
-              }).then(fileBuilder);
-            });
-
+              })
+          }).then(fileBuilder);
         return sweepFromDrive;
       },
       getFiles: function(c) {
