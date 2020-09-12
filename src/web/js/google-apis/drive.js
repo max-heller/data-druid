@@ -78,7 +78,8 @@ window.createProgramCollectionAPI = function createProgramCollectionAPI(collecti
             });
         },
         getContents: function(cache_mode) {
-          return fetch(googFileObject.downloadUrl,
+          const baseUrl = "https://www.googleapis.com/drive/v3/files/" + googFileObject.id + "?alt=media&source=download";
+          return fetch(baseUrl,
             { method: "get",
               cache: cache_mode || "no-cache",
               headers: new Headers([
