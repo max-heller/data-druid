@@ -78,11 +78,12 @@ window.createProgramCollectionAPI = function createProgramCollectionAPI(collecti
             });
         },
         getContents: function() {
-          return Q($.ajax(googFileObject.downloadUrl, {
+          const baseUrl = "https://www.googleapis.com/drive/v3/files/" + googFileObject.id + "?alt=media&source=download";
+          return fetch(baseUrl, {
             method: "get",
             dataType: 'text',
             headers: {'Authorization': 'Bearer ' + gapi.auth.getToken().access_token }
-          })).then(function(response) {
+          }).then(function(response) {
             return response;
           });
         },
